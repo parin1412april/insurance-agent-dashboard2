@@ -24,3 +24,4 @@
 - [x] Card edit functionality (click to edit policyNumber and description)
 - [x] Show agent full name and agent code at bottom of each card (non-deletable)
 - [x] Fix Admin Dashboard card to show full description text (no line-clamp)
+- [x] Admin Dashboard card: show agent full name and code at bottom (same as Kanban Board)

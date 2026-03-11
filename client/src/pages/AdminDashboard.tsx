@@ -218,32 +218,36 @@ function AdminCardsView() {
             return (
               <Card key={row.card.id} className="border">
                 <CardContent className="p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-sm">
-                          {row.card.policyNumber}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] ${cfg.color} ${cfg.bgColor} border-current`}
-                        >
-                          {cfg.icon}
-                          <span className="ml-1">{cfg.title}</span>
-                        </Badge>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm">
+                        {row.card.policyNumber}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ${cfg.color} ${cfg.bgColor} border-current`}
+                      >
+                        {cfg.icon}
+                        <span className="ml-1">{cfg.title}</span>
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-card-foreground whitespace-pre-wrap break-words">
+                      {row.card.description}
+                    </p>
+                    {(row.profileFirstName || row.profileAgentCode) && (
+                      <div className="pt-2 border-t border-border/50">
+                        {(row.profileFirstName || row.profileLastName) && (
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {[row.profileFirstName, row.profileLastName].filter(Boolean).join(" ")}
+                          </p>
+                        )}
+                        {row.profileAgentCode && (
+                          <p className="text-xs font-bold text-muted-foreground">
+                            {row.profileAgentCode}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-                        {row.card.description}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-medium">{agentName}</p>
-                      {row.profileAgentCode && (
-                        <p className="text-[10px] text-muted-foreground">
-                          รหัส: {row.profileAgentCode}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
