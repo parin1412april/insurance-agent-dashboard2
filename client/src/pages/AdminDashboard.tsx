@@ -88,6 +88,7 @@ function AdminCardsView() {
   const allCardsQuery = trpc.admin.allCards.useQuery();
   const [search, setSearch] = useState("");
   const [filterAgent, setFilterAgent] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const filteredCards = useMemo(() => {
     if (!allCardsQuery.data) return [];
@@ -103,9 +104,12 @@ function AdminCardsView() {
       const matchAgent =
         filterAgent === "all" || row.card.userId.toString() === filterAgent;
 
-      return matchSearch && matchAgent;
+      const matchStatus =
+        filterStatus === "all" || row.card.columnStatus === filterStatus;
+
+      return matchSearch && matchAgent && matchStatus;
     });
-  }, [allCardsQuery.data, search, filterAgent]);
+  }, [allCardsQuery.data, search, filterAgent, filterStatus]);
 
   // Unique agents for filter
   const agents = useMemo(() => {
@@ -159,6 +163,20 @@ function AdminCardsView() {
             className="pl-9"
           />
         </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="สถานะเคส" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">ทุกเคส</SelectItem>
+            <SelectItem value="waiting_memo">⏰ รอ Memo</SelectItem>
+            <SelectItem value="editing_memo">📝 กำลังแก้ Memo</SelectItem>
+            <SelectItem value="memo_sent">📤 ส่ง Memo แล้ว</SelectItem>
+            <SelectItem value="pending_review">⚠️ รอการพิจารณา</SelectItem>
+            <SelectItem value="approved">✅ อนุมัติ</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={filterAgent} onValueChange={setFilterAgent}>
           <SelectTrigger className="w-[180px]">
             <Users className="h-4 w-4 mr-2" />
