@@ -225,6 +225,7 @@ const adminRouter = router({
         profileFirstName: agentProfiles.firstName,
         profileLastName: agentProfiles.lastName,
         profileAgentCode: agentProfiles.agentCode,
+        profileStatus: agentProfiles.status,
       })
       .from(kanbanCards)
       .leftJoin(users, eq(kanbanCards.userId, users.id))

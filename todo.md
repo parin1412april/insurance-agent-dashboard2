@@ -32,3 +32,4 @@
 - [x] Make card edit/delete icons always visible (not hover-only) for mobile compatibility
 - [x] Admin Dashboard: add case status filter dropdown before agent filter
 - [x] Admin Dashboard: hide other columns when a specific status filter is selected
+- [x] Admin Dashboard cards: show agent status (Agent/FA/Next Gen) next to agent code in format "สถานะ รหัสตัวแทน"

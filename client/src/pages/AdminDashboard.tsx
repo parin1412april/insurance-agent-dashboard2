@@ -236,9 +236,9 @@ function AdminCardsView() {
                             {[row.profileFirstName, row.profileLastName].filter(Boolean).join(" ")}
                           </p>
                         )}
-                        {row.profileAgentCode && (
+                        {(row.profileStatus || row.profileAgentCode) && (
                           <p className="text-xs font-bold text-muted-foreground">
-                            {row.profileAgentCode}
+                            {[row.profileStatus, row.profileAgentCode].filter(Boolean).join(" ")}
                           </p>
                         )}
                       </div>
