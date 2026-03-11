@@ -27,3 +27,4 @@
 - [x] Admin Dashboard card: show agent full name and code at bottom (same as Kanban Board)
 - [x] Admin Dashboard: change card list view to Kanban-style 5-column layout (read-only, no drag-and-drop)
 - [x] Admin Dashboard agent filter: show "firstName agentCode" instead of OAuth name
+- [x] Block card creation if profile is incomplete - show popup to redirect to profile page

@@ -13,6 +13,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DndContext,
   DragEndEvent,
   DragOverEvent,
@@ -40,6 +50,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 
 // ── Column definitions ───────────────────────────────────────────────
@@ -436,9 +447,20 @@ export default function KanbanBoard() {
 
   const [activeCard, setActiveCard] = useState<KanbanCardData | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
   const [createColumn, setCreateColumn] = useState<ColumnStatus>("waiting_memo");
   const [newCard, setNewCard] = useState({ policyNumber: "", description: "" });
   const [localCards, setLocalCards] = useState<KanbanCardData[] | null>(null);
+  const [, navigate] = useLocation();
+
+  const profileQuery = trpc.profile.get.useQuery();
+
+  // Profile is complete when firstName, lastName, agentCode, phone, status are all filled
+  const isProfileComplete = (() => {
+    const p = profileQuery.data;
+    if (!p) return false;
+    return !!p.firstName?.trim() && !!p.lastName?.trim() && !!p.agentCode?.trim() && !!p.phone?.trim() && !!p.status?.trim();
+  })();
 
   const cards = (localCards ?? cardsQuery.data ?? []) as KanbanCardData[];
 
@@ -526,6 +548,10 @@ export default function KanbanBoard() {
   };
 
   const handleAddCard = (columnStatus: ColumnStatus) => {
+    if (!isProfileComplete) {
+      setShowProfileAlert(true);
+      return;
+    }
     setCreateColumn(columnStatus);
     setNewCard({ policyNumber: "", description: "" });
     setShowCreateDialog(true);
@@ -597,6 +623,24 @@ export default function KanbanBoard() {
           {activeCard ? <OverlayCard card={activeCard} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Profile Incomplete Alert */}
+      <AlertDialog open={showProfileAlert} onOpenChange={setShowProfileAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>กรุณากรอกข้อมูลส่วนตัวให้ครบก่อน</AlertDialogTitle>
+            <AlertDialogDescription>
+              ก่อนเพิ่มเคสใหม่ คุณต้องกรอกข้อมูลส่วนตัวให้ครบถ้วนและบันทึกก่อน ได้แก่ ชื่อ, นามสกุล, รหัสตัวแทน, เบอร์โทร และสถานะ
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowProfileAlert(false); navigate("/profile"); }}>
+              ไปกรอกข้อมูลส่วนตัว
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create Card Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
