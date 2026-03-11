@@ -112,6 +112,9 @@ interface KanbanCardData {
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
+  agentFirstName?: string | null;
+  agentLastName?: string | null;
+  agentCode?: string | null;
 }
 
 // ── Edit Card Dialog ─────────────────────────────────────────────────
@@ -270,6 +273,21 @@ function SortableCard({
             <p className="text-xs text-card-foreground leading-relaxed whitespace-pre-wrap break-words">
               {card.description}
             </p>
+            {/* Agent signature - always shown, non-deletable */}
+            {(card.agentFirstName || card.agentCode) && (
+              <div className="mt-2 pt-2 border-t border-border/50">
+                {(card.agentFirstName || card.agentLastName) && (
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {[card.agentFirstName, card.agentLastName].filter(Boolean).join(" ")}
+                  </p>
+                )}
+                {card.agentCode && (
+                  <p className="text-xs font-bold text-muted-foreground">
+                    {card.agentCode}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

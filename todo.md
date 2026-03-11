@@ -22,3 +22,4 @@
 - [x] Add Dark Mode toggle
 - [x] Card shows full text (no line-clamp)
 - [x] Card edit functionality (click to edit policyNumber and description)
+- [x] Show agent full name and agent code at bottom of each card (non-deletable)

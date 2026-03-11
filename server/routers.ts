@@ -79,15 +79,29 @@ const profileRouter = router({
 
 // ── Kanban router ────────────────────────────────────────────────────
 const kanbanRouter = router({
-  // Get cards for current user
+  // Get cards for current user (with agent profile info)
   list: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
     if (!db) return [];
-    return db
-      .select()
+    const rows = await db
+      .select({
+        id: kanbanCards.id,
+        userId: kanbanCards.userId,
+        policyNumber: kanbanCards.policyNumber,
+        description: kanbanCards.description,
+        columnStatus: kanbanCards.columnStatus,
+        sortOrder: kanbanCards.sortOrder,
+        createdAt: kanbanCards.createdAt,
+        updatedAt: kanbanCards.updatedAt,
+        agentFirstName: agentProfiles.firstName,
+        agentLastName: agentProfiles.lastName,
+        agentCode: agentProfiles.agentCode,
+      })
       .from(kanbanCards)
+      .leftJoin(agentProfiles, eq(agentProfiles.userId, kanbanCards.userId))
       .where(eq(kanbanCards.userId, ctx.user.id))
       .orderBy(kanbanCards.sortOrder);
+    return rows;
   }),
 
   // Create a new card
