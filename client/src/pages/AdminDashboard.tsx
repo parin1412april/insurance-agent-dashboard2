@@ -232,7 +232,7 @@ function AdminCardsView() {
                           <span className="ml-1">{cfg.title}</span>
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">
                         {row.card.description}
                       </p>
                     </div>
