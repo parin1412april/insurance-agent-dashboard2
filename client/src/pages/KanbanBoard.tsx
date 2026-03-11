@@ -34,6 +34,7 @@ import {
   FileEdit,
   GripVertical,
   Loader2,
+  Pencil,
   Plus,
   Send,
   Trash2,
@@ -63,41 +64,41 @@ const COLUMNS: ColumnDef[] = [
     id: "waiting_memo",
     title: "รอ Memo",
     icon: <Clock className="h-4 w-4" />,
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
+    color: "text-amber-700 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    borderColor: "border-amber-200 dark:border-amber-800",
   },
   {
     id: "editing_memo",
     title: "กำลังแก้ Memo",
     icon: <FileEdit className="h-4 w-4" />,
-    color: "text-blue-700",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    color: "text-blue-700 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    borderColor: "border-blue-200 dark:border-blue-800",
   },
   {
     id: "memo_sent",
     title: "ส่ง Memo แล้ว",
     icon: <Send className="h-4 w-4" />,
-    color: "text-purple-700",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
+    color: "text-purple-700 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
+    borderColor: "border-purple-200 dark:border-purple-800",
   },
   {
     id: "pending_review",
     title: "รอการพิจารณา",
     icon: <AlertTriangle className="h-4 w-4" />,
-    color: "text-orange-700",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
+    color: "text-orange-700 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/30",
+    borderColor: "border-orange-200 dark:border-orange-800",
   },
   {
     id: "approved",
     title: "อนุมัติ",
     icon: <CheckCircle2 className="h-4 w-4" />,
-    color: "text-green-700",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
+    color: "text-green-700 dark:text-green-400",
+    bgColor: "bg-green-50 dark:bg-green-950/30",
+    borderColor: "border-green-200 dark:border-green-800",
   },
 ];
 
@@ -113,6 +114,90 @@ interface KanbanCardData {
   updatedAt: Date;
 }
 
+// ── Edit Card Dialog ─────────────────────────────────────────────────
+function EditCardDialog({
+  card,
+  open,
+  onClose,
+}: {
+  card: KanbanCardData;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const utils = trpc.useUtils();
+  const [editData, setEditData] = useState({
+    policyNumber: card.policyNumber,
+    description: card.description,
+  });
+
+  const updateMutation = trpc.kanban.update.useMutation({
+    onSuccess: () => {
+      utils.kanban.list.invalidate();
+      toast.success("แก้ไขการ์ดสำเร็จ");
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleSave = () => {
+    if (!editData.policyNumber.trim() || !editData.description.trim()) {
+      toast.error("กรุณากรอกข้อมูลให้ครบ");
+      return;
+    }
+    updateMutation.mutate({
+      id: card.id,
+      policyNumber: editData.policyNumber.trim(),
+      description: editData.description.trim(),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>แก้ไขเคส</DialogTitle>
+          <DialogDescription>แก้ไขรายละเอียดของเคสนี้</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-policy">เลขกรมธรรม์</Label>
+            <Input
+              id="edit-policy"
+              value={editData.policyNumber}
+              onChange={(e) =>
+                setEditData({ ...editData, policyNumber: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-desc">รายละเอียดที่ต้องการติดตาม</Label>
+            <Textarea
+              id="edit-desc"
+              value={editData.description}
+              onChange={(e) =>
+                setEditData({ ...editData, description: e.target.value })
+              }
+              rows={8}
+              className="resize-y"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            ยกเลิก
+          </Button>
+          <Button onClick={handleSave} disabled={updateMutation.isPending}>
+            {updateMutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            บันทึก
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Sortable Card ────────────────────────────────────────────────────
 function SortableCard({
   card,
@@ -123,6 +208,8 @@ function SortableCard({
   onDelete: (id: number) => void;
   columnDef: ColumnDef;
 }) {
+  const [showEdit, setShowEdit] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -142,37 +229,59 @@ function SortableCard({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group bg-white rounded-lg border shadow-sm hover:shadow-md transition-all p-3 ${columnDef.borderColor}`}
-    >
-      <div className="flex items-start gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className={`text-xs font-bold tracking-wide ${columnDef.color}`}>
-              {card.policyNumber}
-            </span>
-            <button
-              onClick={() => onDelete(card.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-destructive shrink-0"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`group bg-card rounded-lg border shadow-sm hover:shadow-md transition-all p-3 ${columnDef.borderColor}`}
+      >
+        <div className="flex items-start gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex-1 min-w-0">
+            {/* Header: policy number + action buttons */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className={`text-xs font-bold tracking-wide ${columnDef.color}`}>
+                {card.policyNumber}
+              </span>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="text-muted-foreground/60 hover:text-primary p-0.5 rounded"
+                  title="แก้ไข"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => onDelete(card.id)}
+                  className="text-muted-foreground/60 hover:text-destructive p-0.5 rounded"
+                  title="ลบ"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            {/* Full description - no line-clamp */}
+            <p className="text-xs text-card-foreground leading-relaxed whitespace-pre-wrap break-words">
+              {card.description}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words line-clamp-4">
-            {card.description}
-          </p>
         </div>
       </div>
-    </div>
+
+      {showEdit && (
+        <EditCardDialog
+          card={card}
+          open={showEdit}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -180,14 +289,14 @@ function SortableCard({
 function OverlayCard({ card }: { card: KanbanCardData }) {
   const colDef = COLUMNS.find((c) => c.id === card.columnStatus) ?? COLUMNS[0];
   return (
-    <div className={`bg-white rounded-lg border-2 shadow-xl p-3 w-64 ${colDef.borderColor}`}>
+    <div className={`bg-card rounded-lg border-2 shadow-xl p-3 w-64 ${colDef.borderColor}`}>
       <div className="flex items-start gap-2">
         <GripVertical className="h-4 w-4 text-muted-foreground/40 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <span className={`text-xs font-bold tracking-wide ${colDef.color}`}>
             {card.policyNumber}
           </span>
-          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words line-clamp-3 mt-1">
+          <p className="text-xs text-card-foreground leading-relaxed whitespace-pre-wrap break-words mt-1 line-clamp-4">
             {card.description}
           </p>
         </div>
@@ -217,7 +326,7 @@ function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col rounded-xl border ${column.borderColor} ${column.bgColor} min-w-[260px] w-[260px] shrink-0 transition-all ${
+      className={`flex flex-col rounded-xl border ${column.borderColor} ${column.bgColor} min-w-[280px] w-[280px] shrink-0 transition-all ${
         isOver ? "ring-2 ring-primary/30 scale-[1.01]" : ""
       }`}
     >
@@ -232,13 +341,13 @@ function KanbanColumn({
         </div>
         <button
           onClick={() => onAddCard(column.id)}
-          className={`${column.color} hover:bg-white/60 rounded-md p-1 transition-colors`}
+          className={`${column.color} hover:bg-white/20 dark:hover:bg-white/10 rounded-md p-1 transition-colors`}
         >
           <Plus className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Cards area - this is the droppable zone */}
+      {/* Cards area - droppable zone */}
       <ScrollArea className="flex-1 max-h-[calc(100vh-220px)]">
         <div ref={setNodeRef} className="p-2 space-y-2 min-h-[80px]">
           <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
@@ -253,7 +362,7 @@ function KanbanColumn({
           </SortableContext>
           {cards.length === 0 && (
             <div className={`flex items-center justify-center h-16 text-xs rounded-lg border-2 border-dashed transition-colors ${
-              isOver ? "border-primary/40 bg-primary/5 text-primary/60" : "border-transparent text-muted-foreground/50"
+              isOver ? "border-primary/40 bg-primary/5 text-primary/60" : "border-transparent text-muted-foreground/40"
             }`}>
               ลากการ์ดมาวางที่นี่
             </div>
@@ -269,12 +378,10 @@ function findColumnForId(
   id: string,
   cards: KanbanCardData[]
 ): ColumnStatus | null {
-  // Check if it's a column id
   if (id.startsWith("column-")) {
     const colId = id.replace("column-", "") as ColumnStatus;
     if (COLUMNS.some((c) => c.id === colId)) return colId;
   }
-  // Check if it's a card id
   if (id.startsWith("card-")) {
     const cardId = parseInt(id.replace("card-", ""), 10);
     const card = cards.find((c) => c.id === cardId);
@@ -313,8 +420,6 @@ export default function KanbanBoard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createColumn, setCreateColumn] = useState<ColumnStatus>("waiting_memo");
   const [newCard, setNewCard] = useState({ policyNumber: "", description: "" });
-
-  // Local state for optimistic drag
   const [localCards, setLocalCards] = useState<KanbanCardData[] | null>(null);
 
   const cards = (localCards ?? cardsQuery.data ?? []) as KanbanCardData[];
@@ -375,30 +480,18 @@ export default function KanbanBoard() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active } = event;
 
     if (localCards && activeCard) {
       const activeId = active.id.toString();
       if (activeId.startsWith("card-")) {
         const cardId = parseInt(activeId.replace("card-", ""), 10);
-
-        // Determine final column
-        let finalColumn: ColumnStatus = activeCard.columnStatus;
-        if (over) {
-          const overCol = findColumnForId(over.id.toString(), localCards);
-          if (overCol) finalColumn = overCol;
-        }
-
-        // Also check from localCards state (which was updated in dragOver)
         const movedCard = localCards.find((c) => c.id === cardId);
-        if (movedCard) {
-          finalColumn = movedCard.columnStatus;
-        }
 
-        if (finalColumn !== activeCard.columnStatus) {
+        if (movedCard && movedCard.columnStatus !== activeCard.columnStatus) {
           moveMutation.mutate({
             id: cardId,
-            columnStatus: finalColumn,
+            columnStatus: movedCard.columnStatus,
             sortOrder: 0,
           });
         }
@@ -518,6 +611,7 @@ export default function KanbanBoard() {
                   setNewCard({ ...newCard, description: e.target.value })
                 }
                 rows={6}
+                className="resize-y"
               />
             </div>
           </div>

@@ -19,3 +19,6 @@
 - [x] Update profile status options to Agent, FA, Next Gen
 - [x] Fix drag-and-drop card snapping back to original column
 - [x] Add ability for Admin to assign admin role to other users by email
+- [x] Add Dark Mode toggle
+- [x] Card shows full text (no line-clamp)
+- [x] Card edit functionality (click to edit policyNumber and description)
