@@ -87,7 +87,6 @@ const COLUMN_CONFIG: Record<
 function AdminCardsView() {
   const allCardsQuery = trpc.admin.allCards.useQuery();
   const [search, setSearch] = useState("");
-  const [filterColumn, setFilterColumn] = useState<string>("all");
   const [filterAgent, setFilterAgent] = useState<string>("all");
 
   const filteredCards = useMemo(() => {
@@ -101,15 +100,12 @@ function AdminCardsView() {
         (row.profileFirstName ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (row.profileLastName ?? "").toLowerCase().includes(search.toLowerCase());
 
-      const matchColumn =
-        filterColumn === "all" || row.card.columnStatus === filterColumn;
-
       const matchAgent =
         filterAgent === "all" || row.card.userId.toString() === filterAgent;
 
-      return matchSearch && matchColumn && matchAgent;
+      return matchSearch && matchAgent;
     });
-  }, [allCardsQuery.data, search, filterColumn, filterAgent]);
+  }, [allCardsQuery.data, search, filterAgent]);
 
   // Unique agents for filter
   const agents = useMemo(() => {
@@ -125,6 +121,22 @@ function AdminCardsView() {
     }
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [allCardsQuery.data]);
+
+  // Group cards by column
+  const cardsByColumn = useMemo(() => {
+    const grouped: Record<ColumnStatus, typeof filteredCards> = {
+      waiting_memo: [],
+      editing_memo: [],
+      memo_sent: [],
+      pending_review: [],
+      approved: [],
+    };
+    for (const row of filteredCards) {
+      const col = row.card.columnStatus as ColumnStatus;
+      if (grouped[col]) grouped[col].push(row);
+    }
+    return grouped;
+  }, [filteredCards]);
 
   if (allCardsQuery.isLoading) {
     return (
@@ -147,90 +159,53 @@ function AdminCardsView() {
             className="pl-9"
           />
         </div>
-        <div className="flex gap-2">
-          <Select value={filterColumn} onValueChange={setFilterColumn}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="สถานะ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">ทุกสถานะ</SelectItem>
-              {Object.entries(COLUMN_CONFIG).map(([key, cfg]) => (
-                <SelectItem key={key} value={key}>
-                  {cfg.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterAgent} onValueChange={setFilterAgent}>
-            <SelectTrigger className="w-[160px]">
-              <Users className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="ตัวแทน" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">ทุกคน</SelectItem>
-              {agents.map((a) => (
-                <SelectItem key={a.id} value={a.id.toString()}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={filterAgent} onValueChange={setFilterAgent}>
+          <SelectTrigger className="w-[180px]">
+            <Users className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="ตัวแทน" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">ทุกคน</SelectItem>
+            {agents.map((a) => (
+              <SelectItem key={a.id} value={a.id.toString()}>
+                {a.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {Object.entries(COLUMN_CONFIG).map(([key, cfg]) => {
-          const count = (allCardsQuery.data ?? []).filter(
-            (r) => r.card.columnStatus === key
-          ).length;
+      {/* Kanban columns */}
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {(Object.entries(COLUMN_CONFIG) as [ColumnStatus, typeof COLUMN_CONFIG[ColumnStatus]][]).map(([colKey, cfg]) => {
+          const colCards = cardsByColumn[colKey];
           return (
-            <div
-              key={key}
-              className={`rounded-lg border px-3 py-2 ${cfg.bgColor}`}
-            >
-              <div className={`flex items-center gap-1.5 ${cfg.color}`}>
-                {cfg.icon}
-                <span className="text-xs font-medium">{cfg.title}</span>
+            <div key={colKey} className="flex-shrink-0 w-72">
+              {/* Column header */}
+              <div className={`rounded-t-xl px-4 py-3 border border-b-0 ${cfg.bgColor}`}>
+                <div className={`flex items-center gap-2 ${cfg.color}`}>
+                  {cfg.icon}
+                  <span className="font-semibold text-sm">{cfg.title}</span>
+                  <span className={`ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/60`}>
+                    {colCards.length}
+                  </span>
+                </div>
               </div>
-              <p className={`text-lg font-bold mt-0.5 ${cfg.color}`}>{count}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Cards list */}
-      <ScrollArea className="h-[calc(100vh-380px)]">
-        <div className="space-y-2">
-          {filteredCards.length === 0 && (
-            <div className="text-center text-muted-foreground py-8 text-sm">
-              ไม่พบข้อมูล
-            </div>
-          )}
-          {filteredCards.map((row) => {
-            const cfg = COLUMN_CONFIG[row.card.columnStatus as ColumnStatus];
-            const agentName =
-              row.profileNickname ||
-              (row.profileFirstName
-                ? `${row.profileFirstName} ${row.profileLastName ?? ""}`
-                : row.userName ?? "ไม่ทราบ");
-            return (
-              <Card key={row.card.id} className="border">
-                <CardContent className="p-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm">
-                        {row.card.policyNumber}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ${cfg.color} ${cfg.bgColor} border-current`}
-                      >
-                        {cfg.icon}
-                        <span className="ml-1">{cfg.title}</span>
-                      </Badge>
-                    </div>
+              {/* Cards */}
+              <div className="rounded-b-xl border border-t-0 bg-muted/30 min-h-[200px] p-2 space-y-2">
+                {colCards.length === 0 && (
+                  <div className="text-center text-muted-foreground text-xs py-6">
+                    ไม่มีเคส
+                  </div>
+                )}
+                {colCards.map((row) => (
+                  <div
+                    key={row.card.id}
+                    className="rounded-lg border bg-card p-3 shadow-sm space-y-2"
+                  >
+                    <p className="font-bold text-sm text-primary">
+                      {row.card.policyNumber}
+                    </p>
                     <p className="text-xs text-card-foreground whitespace-pre-wrap break-words">
                       {row.card.description}
                     </p>
@@ -249,12 +224,12 @@ function AdminCardsView() {
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </ScrollArea>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

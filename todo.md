@@ -25,3 +25,4 @@
 - [x] Show agent full name and agent code at bottom of each card (non-deletable)
 - [x] Fix Admin Dashboard card to show full description text (no line-clamp)
 - [x] Admin Dashboard card: show agent full name and code at bottom (same as Kanban Board)
+- [x] Admin Dashboard: change card list view to Kanban-style 5-column layout (read-only, no drag-and-drop)
