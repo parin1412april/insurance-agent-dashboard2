@@ -20,7 +20,8 @@ import {
   DragStartEvent,
   PointerSensor,
   TouchSensor,
-  closestCorners,
+  closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -129,7 +130,10 @@ function SortableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id.toString(), data: { card } });
+  } = useSortable({
+    id: `card-${card.id}`,
+    data: { type: "card", card, columnId: card.columnStatus },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -192,7 +196,7 @@ function OverlayCard({ card }: { card: KanbanCardData }) {
   );
 }
 
-// ── Kanban Column ────────────────────────────────────────────────────
+// ── Droppable Kanban Column ─────────────────────────────────────────
 function KanbanColumn({
   column,
   cards,
@@ -204,10 +208,19 @@ function KanbanColumn({
   onDelete: (id: number) => void;
   onAddCard: (columnStatus: ColumnStatus) => void;
 }) {
-  const cardIds = cards.map((c) => c.id.toString());
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${column.id}`,
+    data: { type: "column", columnId: column.id },
+  });
+
+  const cardIds = cards.map((c) => `card-${c.id}`);
 
   return (
-    <div className={`flex flex-col rounded-xl border ${column.borderColor} ${column.bgColor} min-w-[260px] w-[260px] shrink-0`}>
+    <div
+      className={`flex flex-col rounded-xl border ${column.borderColor} ${column.bgColor} min-w-[260px] w-[260px] shrink-0 transition-all ${
+        isOver ? "ring-2 ring-primary/30 scale-[1.01]" : ""
+      }`}
+    >
       {/* Column header */}
       <div className={`flex items-center justify-between px-3 py-2.5 border-b ${column.borderColor}`}>
         <div className="flex items-center gap-2">
@@ -225,9 +238,9 @@ function KanbanColumn({
         </button>
       </div>
 
-      {/* Cards area */}
+      {/* Cards area - this is the droppable zone */}
       <ScrollArea className="flex-1 max-h-[calc(100vh-220px)]">
-        <div className="p-2 space-y-2 min-h-[60px]">
+        <div ref={setNodeRef} className="p-2 space-y-2 min-h-[80px]">
           <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
             {cards.map((card) => (
               <SortableCard
@@ -239,7 +252,9 @@ function KanbanColumn({
             ))}
           </SortableContext>
           {cards.length === 0 && (
-            <div className="flex items-center justify-center h-16 text-xs text-muted-foreground/50">
+            <div className={`flex items-center justify-center h-16 text-xs rounded-lg border-2 border-dashed transition-colors ${
+              isOver ? "border-primary/40 bg-primary/5 text-primary/60" : "border-transparent text-muted-foreground/50"
+            }`}>
               ลากการ์ดมาวางที่นี่
             </div>
           )}
@@ -247,6 +262,25 @@ function KanbanColumn({
       </ScrollArea>
     </div>
   );
+}
+
+// ── Helper: find which column an id belongs to ──────────────────────
+function findColumnForId(
+  id: string,
+  cards: KanbanCardData[]
+): ColumnStatus | null {
+  // Check if it's a column id
+  if (id.startsWith("column-")) {
+    const colId = id.replace("column-", "") as ColumnStatus;
+    if (COLUMNS.some((c) => c.id === colId)) return colId;
+  }
+  // Check if it's a card id
+  if (id.startsWith("card-")) {
+    const cardId = parseInt(id.replace("card-", ""), 10);
+    const card = cards.find((c) => c.id === cardId);
+    if (card) return card.columnStatus;
+  }
+  return null;
 }
 
 // ── Main Kanban Board ────────────────────────────────────────────────
@@ -262,7 +296,10 @@ export default function KanbanBoard() {
   });
   const moveMutation = trpc.kanban.move.useMutation({
     onSuccess: () => utils.kanban.list.invalidate(),
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      utils.kanban.list.invalidate();
+    },
   });
   const deleteMutation = trpc.kanban.delete.useMutation({
     onSuccess: () => {
@@ -304,7 +341,10 @@ export default function KanbanBoard() {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    const card = cards.find((c) => c.id.toString() === event.active.id);
+    const id = event.active.id.toString();
+    if (!id.startsWith("card-")) return;
+    const cardId = parseInt(id.replace("card-", ""), 10);
+    const card = cards.find((c) => c.id === cardId);
     if (card) {
       setActiveCard(card);
       setLocalCards([...cards]);
@@ -318,48 +358,58 @@ export default function KanbanBoard() {
     const activeId = active.id.toString();
     const overId = over.id.toString();
 
-    // Find which column the over target belongs to
-    let overColumn: ColumnStatus | null = null;
+    if (!activeId.startsWith("card-")) return;
 
-    // Check if over is a column
-    const colMatch = COLUMNS.find((c) => c.id === overId);
-    if (colMatch) {
-      overColumn = colMatch.id;
-    } else {
-      // Over is a card
-      const overCard = localCards.find((c) => c.id.toString() === overId);
-      if (overCard) {
-        overColumn = overCard.columnStatus;
-      }
-    }
-
+    const overColumn = findColumnForId(overId, localCards);
     if (!overColumn) return;
 
-    const activeCard = localCards.find((c) => c.id.toString() === activeId);
-    if (!activeCard || activeCard.columnStatus === overColumn) return;
+    const activeCardId = parseInt(activeId.replace("card-", ""), 10);
+    const currentCard = localCards.find((c) => c.id === activeCardId);
+    if (!currentCard || currentCard.columnStatus === overColumn) return;
 
     setLocalCards((prev) =>
       (prev ?? []).map((c) =>
-        c.id.toString() === activeId ? { ...c, columnStatus: overColumn! } : c
+        c.id === activeCardId ? { ...c, columnStatus: overColumn } : c
       )
     );
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active } = event;
-    const activeId = active.id.toString();
+    const { active, over } = event;
 
-    if (localCards) {
-      const movedCard = localCards.find((c) => c.id.toString() === activeId);
-      if (movedCard && activeCard && movedCard.columnStatus !== activeCard.columnStatus) {
-        moveMutation.mutate({
-          id: movedCard.id,
-          columnStatus: movedCard.columnStatus,
-          sortOrder: movedCard.sortOrder,
-        });
+    if (localCards && activeCard) {
+      const activeId = active.id.toString();
+      if (activeId.startsWith("card-")) {
+        const cardId = parseInt(activeId.replace("card-", ""), 10);
+
+        // Determine final column
+        let finalColumn: ColumnStatus = activeCard.columnStatus;
+        if (over) {
+          const overCol = findColumnForId(over.id.toString(), localCards);
+          if (overCol) finalColumn = overCol;
+        }
+
+        // Also check from localCards state (which was updated in dragOver)
+        const movedCard = localCards.find((c) => c.id === cardId);
+        if (movedCard) {
+          finalColumn = movedCard.columnStatus;
+        }
+
+        if (finalColumn !== activeCard.columnStatus) {
+          moveMutation.mutate({
+            id: cardId,
+            columnStatus: finalColumn,
+            sortOrder: 0,
+          });
+        }
       }
     }
 
+    setActiveCard(null);
+    setLocalCards(null);
+  };
+
+  const handleDragCancel = () => {
     setActiveCard(null);
     setLocalCards(null);
   };
@@ -414,10 +464,11 @@ export default function KanbanBoard() {
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div className="flex gap-3 overflow-x-auto pb-4">
           {COLUMNS.map((col) => (

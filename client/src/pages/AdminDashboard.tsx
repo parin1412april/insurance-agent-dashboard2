@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -32,6 +33,7 @@ import {
   Send,
   Shield,
   ShieldOff,
+  ShieldPlus,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -265,6 +267,20 @@ function AdminUsersView() {
     onError: (err) => toast.error(err.message),
   });
 
+  const setRoleByEmailMutation = trpc.admin.setRoleByEmail.useMutation({
+    onSuccess: (data) => {
+      usersQuery.refetch();
+      if (data.status === "updated") {
+        toast.success("เพิ่มสิทธิ์ Admin สำเร็จ");
+        setShowAddAdmin(false);
+        setAdminEmail("");
+      } else if (data.status === "not_found") {
+        toast.error("ไม่พบ email นี้ในระบบ (ผู้ใช้ยังไม่ได้ Login เข้าระบบ)");
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   // Whitelist emails
   const whitelistQuery = trpc.admin.whitelistEmails.list.useQuery();
   const addWhitelistMutation = trpc.admin.whitelistEmails.add.useMutation({
@@ -286,10 +302,20 @@ function AdminUsersView() {
 
   const [showAddEmail, setShowAddEmail] = useState(false);
   const [newEmail, setNewEmail] = useState({ email: "", name: "" });
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
 
   const handleToggleRole = (userId: number, currentRole: string) => {
     const newRole = currentRole === "admin" ? "user" : "admin";
     setRoleMutation.mutate({ userId, role: newRole });
+  };
+
+  const handleAddAdminByEmail = () => {
+    if (!adminEmail.trim()) {
+      toast.error("กรุณากรอก email");
+      return;
+    }
+    setRoleByEmailMutation.mutate({ email: adminEmail.trim(), role: "admin" });
   };
 
   if (usersQuery.isLoading) {
@@ -305,8 +331,16 @@ function AdminUsersView() {
       {/* Users with roles */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">สมาชิกที่ Login แล้ว</CardTitle>
-          <CardDescription>จัดการสิทธิ์ Admin ให้สมาชิกในทีม</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">สมาชิกที่ Login แล้ว</CardTitle>
+              <CardDescription>จัดการสิทธิ์ Admin ให้สมาชิกในทีม กดปุ่มโล่เพื่อสลับสิทธิ์</CardDescription>
+            </div>
+            <Button size="sm" onClick={() => setShowAddAdmin(true)}>
+              <ShieldPlus className="mr-1.5 h-4 w-4" />
+              เพิ่ม Admin ด้วย Email
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -332,6 +366,7 @@ function AdminUsersView() {
                       size="sm"
                       onClick={() => handleToggleRole(u.id, u.role)}
                       disabled={setRoleMutation.isPending}
+                      title={u.role === "admin" ? "ถอดสิทธิ์ Admin" : "ให้สิทธิ์ Admin"}
                     >
                       {u.role === "admin" ? (
                         <ShieldOff className="h-4 w-4" />
@@ -405,6 +440,46 @@ function AdminUsersView() {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Add Admin by Email Dialog */}
+      <Dialog open={showAddAdmin} onOpenChange={setShowAddAdmin}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่ม Admin ด้วย Email</DialogTitle>
+            <DialogDescription>
+              ระบุ email ของสมาชิกที่ต้องการให้เป็น Admin (สมาชิกต้อง Login เข้าระบบอย่างน้อย 1 ครั้งก่อน)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="adminEmail">Email</Label>
+              <Input
+                id="adminEmail"
+                placeholder="email@example.com"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddAdminByEmail();
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddAdmin(false)}>
+              ยกเลิก
+            </Button>
+            <Button
+              onClick={handleAddAdminByEmail}
+              disabled={setRoleByEmailMutation.isPending || !adminEmail.trim()}
+            >
+              {setRoleByEmailMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              ให้สิทธิ์ Admin
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Email Dialog */}
       <Dialog open={showAddEmail} onOpenChange={setShowAddEmail}>

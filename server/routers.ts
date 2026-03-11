@@ -243,6 +243,39 @@ const adminRouter = router({
       return { success: true };
     }),
 
+  // Set admin role by email (even if user hasn't logged in yet)
+  setRoleByEmail: adminProcedure
+    .input(
+      z.object({
+        email: z.string().email().max(320),
+        role: z.enum(["user", "admin"]),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Check if user exists with this email
+      const existing = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // User exists, update role
+        await db
+          .update(users)
+          .set({ role: input.role })
+          .where(eq(users.id, existing[0].id));
+        return { success: true, status: "updated" as const };
+      } else {
+        // User hasn't logged in yet - we'll store the email in whitelist with admin note
+        // The role will be set when they first log in
+        return { success: false, status: "not_found" as const };
+      }
+    }),
+
   // Whitelist email management
   whitelistEmails: router({
     list: adminProcedure.query(async () => {

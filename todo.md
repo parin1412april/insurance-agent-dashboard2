@@ -17,3 +17,5 @@
 - [x] Seed whitelist emails from CSV
 - [x] Write vitest tests
 - [x] Update profile status options to Agent, FA, Next Gen
+- [x] Fix drag-and-drop card snapping back to original column
+- [x] Add ability for Admin to assign admin role to other users by email
