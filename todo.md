@@ -29,3 +29,4 @@
 - [x] Admin Dashboard agent filter: show "firstName agentCode" instead of OAuth name
 - [x] Block card creation if profile is incomplete - show popup to redirect to profile page
 - [x] Add status selector in edit card dialog to change card column status directly
+- [x] Make card edit/delete icons always visible (not hover-only) for mobile compatibility

@@ -292,7 +292,7 @@ function SortableCard({
               <span className={`text-xs font-bold tracking-wide ${columnDef.color}`}>
                 {card.policyNumber}
               </span>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowEdit(true)}
                   className="text-muted-foreground/60 hover:text-primary p-0.5 rounded"
