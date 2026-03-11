@@ -110,16 +110,16 @@ function AdminCardsView() {
   // Unique agents for filter
   const agents = useMemo(() => {
     if (!allCardsQuery.data) return [];
-    const map = new Map<number, string>();
+    const map = new Map<number, { label: string }>();
     for (const row of allCardsQuery.data) {
       if (!map.has(row.card.userId)) {
-        map.set(
-          row.card.userId,
-          row.profileNickname || row.profileFirstName || row.userName || `User #${row.card.userId}`
-        );
+        // Build label: firstName agentCode (e.g. "ปรินทร์ 696780")
+        const namePart = row.profileFirstName || row.profileNickname || row.userName || `User #${row.card.userId}`;
+        const codePart = row.profileAgentCode ? ` ${row.profileAgentCode}` : "";
+        map.set(row.card.userId, { label: `${namePart}${codePart}` });
       }
     }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    return Array.from(map.entries()).map(([id, { label }]) => ({ id, label }));
   }, [allCardsQuery.data]);
 
   // Group cards by column
@@ -168,7 +168,7 @@ function AdminCardsView() {
             <SelectItem value="all">ทุกคน</SelectItem>
             {agents.map((a) => (
               <SelectItem key={a.id} value={a.id.toString()}>
-                {a.name}
+                {a.label}
               </SelectItem>
             ))}
           </SelectContent>
