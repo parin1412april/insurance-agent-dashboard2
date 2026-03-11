@@ -10,6 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import {
@@ -142,6 +149,7 @@ function EditCardDialog({
   const [editData, setEditData] = useState({
     policyNumber: card.policyNumber,
     description: card.description,
+    columnStatus: card.columnStatus,
   });
 
   const updateMutation = trpc.kanban.update.useMutation({
@@ -162,6 +170,7 @@ function EditCardDialog({
       id: card.id,
       policyNumber: editData.policyNumber.trim(),
       description: editData.description.trim(),
+      columnStatus: editData.columnStatus,
     });
   };
 
@@ -194,6 +203,26 @@ function EditCardDialog({
               rows={8}
               className="resize-y"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>สถานะเคส</Label>
+            <Select
+              value={editData.columnStatus}
+              onValueChange={(val) =>
+                setEditData({ ...editData, columnStatus: val as ColumnStatus })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="waiting_memo">⏰ รอ Memo</SelectItem>
+                <SelectItem value="editing_memo">📝 กำลังแก้ Memo</SelectItem>
+                <SelectItem value="memo_sent">📤 ส่ง Memo แล้ว</SelectItem>
+                <SelectItem value="pending_review">⚠️ รอการพิจารณา</SelectItem>
+                <SelectItem value="approved">✅ อนุมัติ</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>

@@ -146,6 +146,7 @@ const kanbanRouter = router({
         id: z.number(),
         policyNumber: z.string().min(1).max(100).optional(),
         description: z.string().min(1).optional(),
+        columnStatus: columnStatusEnum.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -155,6 +156,7 @@ const kanbanRouter = router({
       const updateData: Record<string, unknown> = {};
       if (input.policyNumber !== undefined) updateData.policyNumber = input.policyNumber;
       if (input.description !== undefined) updateData.description = input.description;
+      if (input.columnStatus !== undefined) updateData.columnStatus = input.columnStatus;
 
       if (Object.keys(updateData).length > 0) {
         await db
