@@ -39,7 +39,7 @@ export default function ProfilePage() {
         nickname: profileQuery.data.nickname || "",
         agentCode: profileQuery.data.agentCode || "",
         phone: profileQuery.data.phone || "",
-        status: profileQuery.data.status || "active",
+        status: profileQuery.data.status || "agent",
       });
     }
   }, [profileQuery.data]);
@@ -139,8 +139,9 @@ export default function ProfilePage() {
                     <SelectValue placeholder="เลือกสถานะ" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="agent">Agent</SelectItem>
+                    <SelectItem value="fa">FA</SelectItem>
+                    <SelectItem value="next_gen">Next Gen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

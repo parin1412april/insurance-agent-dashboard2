@@ -16,3 +16,4 @@
 - [x] Frontend: Admin - manage admin roles (add/remove admin by email)
 - [x] Seed whitelist emails from CSV
 - [x] Write vitest tests
+- [x] Update profile status options to Agent, FA, Next Gen
