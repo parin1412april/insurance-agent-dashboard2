@@ -2,16 +2,9 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-or
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -25,4 +18,61 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Agent profile – extended personal info for each insurance agent.
+ */
+export const agentProfiles = mysqlTable("agent_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  firstName: varchar("firstName", { length: 100 }).notNull().default(""),
+  lastName: varchar("lastName", { length: 100 }).notNull().default(""),
+  nickname: varchar("nickname", { length: 100 }).notNull().default(""),
+  agentCode: varchar("agentCode", { length: 50 }).notNull().default(""),
+  phone: varchar("phone", { length: 20 }).notNull().default(""),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgentProfile = typeof agentProfiles.$inferSelect;
+export type InsertAgentProfile = typeof agentProfiles.$inferInsert;
+
+/**
+ * Kanban card – each card represents a policy case being tracked.
+ * The `column` field maps to one of the 5 Kanban columns.
+ */
+export const kanbanCards = mysqlTable("kanban_cards", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  policyNumber: varchar("policyNumber", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  columnStatus: mysqlEnum("columnStatus", [
+    "waiting_memo",
+    "editing_memo",
+    "memo_sent",
+    "pending_review",
+    "approved",
+  ]).default("waiting_memo").notNull(),
+  sortOrder: int("sortOrder").notNull().default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type KanbanCard = typeof kanbanCards.$inferSelect;
+export type InsertKanbanCard = typeof kanbanCards.$inferInsert;
+
+/**
+ * Whitelist emails – only these emails are allowed to log in.
+ */
+export const whitelistEmails = mysqlTable("whitelist_emails", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  name: varchar("name", { length: 200 }).notNull().default(""),
+  note: text("note"),
+  isActive: int("isActive").notNull().default(1),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WhitelistEmail = typeof whitelistEmails.$inferSelect;
+export type InsertWhitelistEmail = typeof whitelistEmails.$inferInsert;
