@@ -31,3 +31,4 @@
 - [x] Add status selector in edit card dialog to change card column status directly
 - [x] Make card edit/delete icons always visible (not hover-only) for mobile compatibility
 - [x] Admin Dashboard: add case status filter dropdown before agent filter
+- [x] Admin Dashboard: hide other columns when a specific status filter is selected

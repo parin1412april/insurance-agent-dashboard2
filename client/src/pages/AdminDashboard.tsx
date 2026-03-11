@@ -195,10 +195,12 @@ function AdminCardsView() {
 
       {/* Kanban columns */}
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {(Object.entries(COLUMN_CONFIG) as [ColumnStatus, typeof COLUMN_CONFIG[ColumnStatus]][]).map(([colKey, cfg]) => {
+        {(Object.entries(COLUMN_CONFIG) as [ColumnStatus, typeof COLUMN_CONFIG[ColumnStatus]][]).filter(([colKey]) => {
+          return filterStatus === "all" || filterStatus === colKey;
+        }).map(([colKey, cfg]) => {
           const colCards = cardsByColumn[colKey];
           return (
-            <div key={colKey} className="flex-shrink-0 w-72">
+            <div key={colKey} className={filterStatus === "all" ? "flex-shrink-0 w-72" : "flex-shrink-0 w-full max-w-2xl"}>
               {/* Column header */}
               <div className={`rounded-t-xl px-4 py-3 border border-b-0 ${cfg.bgColor}`}>
                 <div className={`flex items-center gap-2 ${cfg.color}`}>
