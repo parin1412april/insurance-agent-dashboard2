@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AdminDashboard from "./pages/AdminDashboard";
 import KanbanBoard from "./pages/KanbanBoard";
+import LeadsBoard from "./pages/LeadsBoard";
 import ProfilePage from "./pages/ProfilePage";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Switch>
         <Route path="/" component={KanbanBoard} />
         <Route path="/profile" component={ProfilePage} />
+        <Route path="/leads" component={LeadsBoard} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

@@ -15,6 +15,13 @@
       "when": 1773225809069,
       "tag": "0001_spotty_spacker_dave",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1773310322607,
+      "tag": "0002_goofy_power_man",
+      "breakpoints": true
     }
   ]
 }

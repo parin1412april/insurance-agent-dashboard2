@@ -33,3 +33,12 @@
 - [x] Admin Dashboard: add case status filter dropdown before agent filter
 - [x] Admin Dashboard: hide other columns when a specific status filter is selected
 - [x] Admin Dashboard cards: show agent status (Agent/FA/Next Gen) next to agent code in format "สถานะ รหัสตัวแทน"
+- [x] Lead CRM: database schema for leads table (name, phone, tags, expectedPremium, columnStatus, lastMovedAt, notes, profileImageUrl)
+- [x] Lead CRM: backend tRPC procedures (list, create, update, delete, updateStatus)
+- [x] Lead CRM: 6-column Kanban UI (New Lead, Contacted, Fact-Finding, Follow-up, Closed Won, Closed Lost)
+- [x] Lead CRM: customer card with name, tags (colored), expected premium, profile image
+- [x] Lead CRM: SLA alert - yellow border after 3 days, red border after 7 days in same column
+- [x] Lead CRM: drag-and-drop between columns (touch-friendly for iPad)
+- [x] Lead CRM: confetti animation when card moved to Closed Won
+- [x] Lead CRM: add/edit card dialog with all fields
+- [x] Lead CRM: add navigation link in sidebar

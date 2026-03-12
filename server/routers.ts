@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import { agentProfiles, kanbanCards, users, whitelistEmails } from "../drizzle/schema";
+import { agentProfiles, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -346,6 +346,109 @@ const adminRouter = router({
   }),
 });
 
+// ── Leads router ───────────────────────────────────────────────────
+const leadColumnStatusEnum = z.enum([
+  "new_lead",
+  "contacted",
+  "fact_finding",
+  "follow_up",
+  "closed_won",
+  "closed_lost",
+]);
+
+const leadsRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return [];
+    return db
+      .select()
+      .from(leads)
+      .where(eq(leads.userId, ctx.user.id))
+      .orderBy(leads.sortOrder, leads.createdAt);
+  }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(200),
+        phone: z.string().max(30).optional(),
+        tags: z.array(z.string()).optional(),
+        expectedPremium: z.number().min(0).optional(),
+        columnStatus: leadColumnStatusEnum.optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const tagsJson = JSON.stringify(input.tags ?? []);
+      const result = await db.insert(leads).values({
+        userId: ctx.user.id,
+        name: input.name,
+        phone: input.phone ?? "",
+        tags: tagsJson,
+        expectedPremium: input.expectedPremium ?? 0,
+        columnStatus: input.columnStatus ?? "new_lead",
+        notes: input.notes ?? null,
+        lastMovedAt: new Date(),
+      });
+      return { id: Number((result as any).insertId) };
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().min(1).max(200).optional(),
+        phone: z.string().max(30).optional(),
+        tags: z.array(z.string()).optional(),
+        expectedPremium: z.number().min(0).optional(),
+        columnStatus: leadColumnStatusEnum.optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const existing = await db.select().from(leads).where(and(eq(leads.id, input.id), eq(leads.userId, ctx.user.id))).limit(1);
+      if (!existing[0]) throw new Error("Lead not found");
+      const updateData: Partial<typeof leads.$inferInsert> = {};
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.phone !== undefined) updateData.phone = input.phone;
+      if (input.tags !== undefined) updateData.tags = JSON.stringify(input.tags);
+      if (input.expectedPremium !== undefined) updateData.expectedPremium = input.expectedPremium;
+      if (input.notes !== undefined) updateData.notes = input.notes;
+      if (input.columnStatus !== undefined) {
+        updateData.columnStatus = input.columnStatus;
+        updateData.lastMovedAt = new Date();
+      }
+      await db.update(leads).set(updateData).where(eq(leads.id, input.id));
+      return { success: true };
+    }),
+
+  updateStatus: protectedProcedure
+    .input(z.object({ id: z.number(), columnStatus: leadColumnStatusEnum }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const existing = await db.select().from(leads).where(and(eq(leads.id, input.id), eq(leads.userId, ctx.user.id))).limit(1);
+      if (!existing[0]) throw new Error("Lead not found");
+      await db.update(leads).set({ columnStatus: input.columnStatus, lastMovedAt: new Date() }).where(eq(leads.id, input.id));
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const existing = await db.select().from(leads).where(and(eq(leads.id, input.id), eq(leads.userId, ctx.user.id))).limit(1);
+      if (!existing[0]) throw new Error("Lead not found");
+      await db.delete(leads).where(eq(leads.id, input.id));
+      return { success: true };
+    }),
+});
+
 // ── App router ───────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -360,6 +463,7 @@ export const appRouter = router({
   profile: profileRouter,
   kanban: kanbanRouter,
   admin: adminRouter,
+  leads: leadsRouter,
 });
 
 export type AppRouter = typeof appRouter;

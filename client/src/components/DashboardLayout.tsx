@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Kanban, LogOut, Moon, PanelLeft, Shield, Sun, User } from "lucide-react";
+import { Kanban, LogOut, Moon, PanelLeft, Shield, Sun, User, Users } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLocation } from "wouter";
@@ -37,6 +37,7 @@ interface MenuItem {
 
 const allMenuItems: MenuItem[] = [
   { icon: Kanban, label: "ติดตามเคส", path: "/" },
+  { icon: Users, label: "ติดตามผู้มุ่งหวัง", path: "/leads" },
   { icon: User, label: "ข้อมูลส่วนตัว", path: "/profile" },
   { icon: Shield, label: "Admin", path: "/admin", adminOnly: true },
 ];

@@ -76,3 +76,32 @@ export const whitelistEmails = mysqlTable("whitelist_emails", {
 
 export type WhitelistEmail = typeof whitelistEmails.$inferSelect;
 export type InsertWhitelistEmail = typeof whitelistEmails.$inferInsert;
+
+/**
+ * Leads table – CRM for tracking prospective customers (ผู้มุ่งหวัง).
+ */
+export const leads = mysqlTable("leads", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  phone: varchar("phone", { length: 30 }).notNull().default(""),
+  tags: varchar("tags", { length: 1000 }).notNull().default(""), // JSON array of strings
+  expectedPremium: int("expectedPremium").notNull().default(0),
+  columnStatus: mysqlEnum("columnStatus", [
+    "new_lead",
+    "contacted",
+    "fact_finding",
+    "follow_up",
+    "closed_won",
+    "closed_lost",
+  ]).default("new_lead").notNull(),
+  lastMovedAt: timestamp("lastMovedAt").defaultNow().notNull(),
+  notes: text("notes"),
+  profileImageUrl: text("profileImageUrl"),
+  sortOrder: int("sortOrder").notNull().default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;
