@@ -1,4 +1,5 @@
-// FAQ Data Structure and Types
+const CDN = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663213925077/7md5ixsfuyx3z6YVy8PeuB';
+
 export interface Document {
   id: string;
   name: string;
@@ -84,7 +85,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q1-1',
         name: 'S__29933609_0.jpg',
         type: 'image',
-        url: '/faq-data/S__29933609_0.jpg',
+        url: `${CDN}/S__29933609_0_4beb0888.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -92,7 +93,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q1-2',
         name: 'S__29933610_0.jpg',
         type: 'image',
-        url: '/faq-data/S__29933610_0.jpg',
+        url: `${CDN}/S__29933610_0_6c06336a.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -100,7 +101,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q1-3',
         name: 'S__29933611_0.jpg',
         type: 'image',
-        url: '/faq-data/S__29933611_0.jpg',
+        url: `${CDN}/S__29933611_0_8ef597b3.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -108,7 +109,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q1-4',
         name: 'S__217358582_0.jpg',
         type: 'image',
-        url: '/faq-data/S__217358582_0.jpg',
+        url: `${CDN}/S__217358582_0_f7b1de87.jpg`,
         likes: 0,
         dislikes: 0
       }
@@ -129,7 +130,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q2-1',
         name: 'S__217407515_0.jpg',
         type: 'image',
-        url: '/faq-data/S__217407515_0.jpg',
+        url: `${CDN}/S__217407515_0_94a3af66.jpg`,
         likes: 0,
         dislikes: 0
       }
@@ -150,7 +151,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q3-1',
         name: 'S__28123193_0.png',
         type: 'image',
-        url: '/faq-data/S__28123193_0.png',
+        url: `${CDN}/S__28123193_0_3cffa788.png`,
         likes: 0,
         dislikes: 0
       },
@@ -158,7 +159,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q3-2',
         name: 'การถอดQRCodeออกจากETRสำหรับรับชำระเงินสด.pdf',
         type: 'pdf',
-        url: '/faq-data/การถอดQRCodeออกจากETRสำหรับรับชำระเงินสด.pdf',
+        url: `${CDN}/qr_code_etr_cash_d59a7bec.pdf`,
         likes: 0,
         dislikes: 0
       }
@@ -203,7 +204,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q6-1',
         name: 'หนังสือยินยอมขอประวัติการรักษา.pdf',
         type: 'pdf',
-        url: '/faq-data/หนังสือยินยอมขอประวัติการรักษา.pdf',
+        url: `${CDN}/consent_medical_history_7a5f31b5.pdf`,
         likes: 0,
         dislikes: 0
       },
@@ -211,7 +212,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q6-2',
         name: 'การขอประวัติการรักษาจากโรงพยาบาล.pdf',
         type: 'pdf',
-        url: '/faq-data/การขอประวัติการรักษาจากโรงพยาบาล.pdf',
+        url: `${CDN}/request_medical_history_hospital_b6e57128.pdf`,
         likes: 0,
         dislikes: 0
       },
@@ -219,7 +220,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q6-3',
         name: 'S__1335328_0.jpg',
         type: 'image',
-        url: '/faq-data/S__1335328_0.jpg',
+        url: `${CDN}/S__1335328_0_9db8efa3.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -227,7 +228,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q6-4',
         name: 'S__57327669_0.jpg',
         type: 'image',
-        url: '/faq-data/S__57327669_0.jpg',
+        url: `${CDN}/S__57327669_0_7783091c.jpg`,
         likes: 0,
         dislikes: 0
       }
@@ -248,7 +249,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q7-1',
         name: 'S__68214793_0.jpg',
         type: 'image',
-        url: '/faq-data/S__68214793_0.jpg',
+        url: `${CDN}/S__68214793_0_fefa3d8f.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -256,7 +257,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q7-2',
         name: 'S__68214794_0.jpg',
         type: 'image',
-        url: '/faq-data/S__68214794_0.jpg',
+        url: `${CDN}/S__68214794_0_baa66ab4.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -264,7 +265,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q7-3',
         name: 'S__68214795_0.jpg',
         type: 'image',
-        url: '/faq-data/S__68214795_0.jpg',
+        url: `${CDN}/S__68214795_0_1c7e987b.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -272,7 +273,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q7-4',
         name: 'S__217751647_0.jpg',
         type: 'image',
-        url: '/faq-data/S__217751647_0.jpg',
+        url: `${CDN}/S__217751647_0_b3a36588.jpg`,
         likes: 0,
         dislikes: 0
       }
@@ -293,7 +294,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q8-1',
         name: 'S__217743409_0.jpg',
         type: 'image',
-        url: '/faq-data/S__217743409_0.jpg',
+        url: `${CDN}/S__217743409_0_e59cfad8.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -301,7 +302,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q8-2',
         name: 'S__28360710_0.jpg',
         type: 'image',
-        url: '/faq-data/S__28360710_0.jpg',
+        url: `${CDN}/S__28360710_0_9c8dd50e.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -309,7 +310,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q8-3',
         name: 'S__28360709_0.jpg',
         type: 'image',
-        url: '/faq-data/S__28360709_0.jpg',
+        url: `${CDN}/S__28360709_0_2b992a97.jpg`,
         likes: 0,
         dislikes: 0
       }
@@ -330,7 +331,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q9-1',
         name: 'S__28360710_0.jpg',
         type: 'image',
-        url: '/faq-data/S__28360710_0.jpg',
+        url: `${CDN}/S__28360710_0_9c8dd50e.jpg`,
         likes: 0,
         dislikes: 0
       },
@@ -338,7 +339,7 @@ export const FAQ_ENTRIES: FAQEntry[] = [
         id: 'doc-q9-2',
         name: 'S__28360709_0.jpg',
         type: 'image',
-        url: '/faq-data/S__28360709_0.jpg',
+        url: `${CDN}/S__28360709_0_2b992a97.jpg`,
         likes: 0,
         dislikes: 0
       }

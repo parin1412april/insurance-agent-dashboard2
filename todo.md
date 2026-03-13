@@ -47,3 +47,5 @@
 - [x] Q&A: create QAPage.tsx integrating all FAQ components
 - [x] Q&A: add navigation link in sidebar (after ติดตามผู้มุ่งหวัง)
 - [x] Q&A: register route /qa in App.tsx
+- [x] Q&A: upload document files (JPG/PDF) from zip to CDN
+- [x] Q&A: update faqData.ts URLs to CDN links
