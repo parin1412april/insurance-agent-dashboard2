@@ -331,7 +331,7 @@ function DashboardLayoutContent({
               สรุปเบี้ยประกัน
             </DialogTitle>
             <DialogDescription className="text-base leading-relaxed pt-1">
-              คุณกำลังจะเข้าสู่ <span className="font-semibold text-foreground">FinAlly Premium Calculator</span> — เครื่องมือเปรียบเทียบแบบประกันและคำนวณเบี้ยจากหลายบริษัทในที่เดียว
+              คุณกำลังจะเข้าสู่ <span className="font-semibold text-foreground">FinPlan | คัดสรรแผนที่ใช่ ในงบที่ชอบ</span><br />ให้คุณได้รับผลประโยชน์สูงสุดภายใต้งบประมาณที่ต้องการ
             </DialogDescription>
           </DialogHeader>
           <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 my-1">
