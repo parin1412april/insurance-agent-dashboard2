@@ -70,3 +70,4 @@
 - [x] Home Calendar: เพิ่ม nav item "หน้าหลัก" เป็นรายการแรกใน sidebar
 - [x] Home Calendar: register route / ใน App.tsx
 - [x] Home Calendar: เขียน vitest tests
+- [x] LeadsBoard: แสดงข้อความใน card เต็ม (ไม่ตัด ...) โดย default, เพิ่ม toggle checkbox "ย่อข้อความ" ก่อนปุ่ม + เพิ่มผู้หวัง

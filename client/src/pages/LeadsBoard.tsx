@@ -52,6 +52,7 @@ import {
   UserCheck,
   X,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDroppable } from "@dnd-kit/core";
@@ -195,11 +196,13 @@ function LeadCard({
   onEdit,
   onDelete,
   isDragging = false,
+  truncateNotes = false,
 }: {
   lead: Lead;
   onEdit: (lead: Lead) => void;
   onDelete: (id: number) => void;
   isDragging?: boolean;
+  truncateNotes?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } =
     useSortable({ id: `lead-${lead.id}` });
@@ -288,7 +291,7 @@ function LeadCard({
 
       {/* Notes preview */}
       {lead.notes && (
-        <p className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap">{lead.notes}</p>
+        <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${truncateNotes ? "line-clamp-2" : ""}`}>{lead.notes}</p>
       )}
 
       {/* SLA warning */}
@@ -311,12 +314,14 @@ function LeadColumn({
   onEdit,
   onDelete,
   onAddLead,
+  truncateNotes,
 }: {
   colKey: LeadColumnStatus;
   leads: Lead[];
   onEdit: (lead: Lead) => void;
   onDelete: (id: number) => void;
   onAddLead: (status: LeadColumnStatus) => void;
+  truncateNotes: boolean;
 }) {
   const cfg = COLUMN_CONFIG[colKey];
   const { setNodeRef, isOver } = useDroppable({ id: `col-${colKey}` });
@@ -361,7 +366,7 @@ function LeadColumn({
             </div>
           )}
           {leads.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} onEdit={onEdit} onDelete={onDelete} />
+            <LeadCard key={lead.id} lead={lead} onEdit={onEdit} onDelete={onDelete} truncateNotes={truncateNotes} />
           ))}
         </SortableContext>
       </div>
@@ -609,6 +614,9 @@ export default function LeadsBoard() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Truncate toggle state
+  const [truncateNotes, setTruncateNotes] = useState(false);
+
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -770,10 +778,20 @@ export default function LeadsBoard() {
           <h1 className="text-2xl font-bold tracking-tight">ติดตามผู้มุ่งหวัง</h1>
           <p className="text-sm text-muted-foreground">CRM สำหรับติดตาม Pipeline ของลูกค้า</p>
         </div>
-        <Button onClick={() => handleAddLead("new_lead")} className="gap-2 self-start sm:self-auto">
-          <Plus className="h-4 w-4" />
-          เพิ่มผู้มุ่งหวัง
-        </Button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-muted-foreground">
+            <Checkbox
+              id="truncate-toggle"
+              checked={truncateNotes}
+              onCheckedChange={(v) => setTruncateNotes(v === true)}
+            />
+            <span>ย่อข้อความ</span>
+          </label>
+          <Button onClick={() => handleAddLead("new_lead")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            เพิ่มผู้มุ่งหวัง
+          </Button>
+        </div>
       </div>
 
       {/* Stats bar */}
@@ -829,6 +847,7 @@ export default function LeadsBoard() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onAddLead={handleAddLead}
+              truncateNotes={truncateNotes}
             />
           ))}
         </div>
@@ -840,6 +859,7 @@ export default function LeadsBoard() {
               onEdit={() => {}}
               onDelete={() => {}}
               isDragging
+              truncateNotes={truncateNotes}
             />
           )}
         </DragOverlay>
