@@ -37,6 +37,7 @@ import {
   Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DrumDatePicker } from "@/components/DrumDatePicker";
 
 // Bank brand colors for visual identification
 const BANK_COLORS: Record<string, string> = {
@@ -649,7 +650,16 @@ export default function InsuranceForm() {
                         <Input placeholder="กรอกนามสกุล" {...register("spouseLastName")} className="h-11" />
                       </FormField>
                       <FormField label="วันเดือนปีเกิดคู่สมรส" error={errors.spouseBirthDate?.message}>
-                        <Input type="date" {...register("spouseBirthDate")} className="h-11" />
+                        <Controller
+                          name="spouseBirthDate"
+                          control={control}
+                          render={({ field: f }) => (
+                            <DrumDatePicker
+                              value={f.value ?? ""}
+                              onChange={f.onChange}
+                            />
+                          )}
+                        />
                       </FormField>
                     </div>
                   </motion.div>
@@ -1008,24 +1018,27 @@ export default function InsuranceForm() {
                         />
                       </FormField>
                       <FormField label="วันเกิด" error={errors.beneficiaries?.[index]?.birthDate?.message} required>
-                        <Input
-                          type="date"
-                          {...register(`beneficiaries.${index}.birthDate`, {
-                            onChange: (e) => {
-                              const birthDate = e.target.value;
-                              if (birthDate) {
-                                const today = new Date();
-                                const birth = new Date(birthDate);
-                                let age = today.getFullYear() - birth.getFullYear();
-                                const monthDiff = today.getMonth() - birth.getMonth();
-                                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                                  age--;
+                        <Controller
+                          name={`beneficiaries.${index}.birthDate`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <DrumDatePicker
+                              value={f.value ?? ""}
+                              onChange={(dateStr) => {
+                                f.onChange(dateStr);
+                                if (dateStr) {
+                                  const today = new Date();
+                                  const birth = new Date(dateStr);
+                                  let age = today.getFullYear() - birth.getFullYear();
+                                  const monthDiff = today.getMonth() - birth.getMonth();
+                                  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                                    age--;
+                                  }
+                                  setValue(`beneficiaries.${index}.age`, age);
                                 }
-                                setValue(`beneficiaries.${index}.age`, age);
-                              }
-                            },
-                          })}
-                          className="h-10"
+                              }}
+                            />
+                          )}
                         />
                       </FormField>
                       <FormField label="อายุ" error={errors.beneficiaries?.[index]?.age?.message} required>
@@ -1356,7 +1369,16 @@ export default function InsuranceForm() {
                         </FormField>
 
                         <FormField label="เมื่อ" error={errors.rejectedDate?.message}>
-                          <Input type="date" {...register("rejectedDate")} className="h-11" />
+                          <Controller
+                            name="rejectedDate"
+                            control={control}
+                            render={({ field: f }) => (
+                              <DrumDatePicker
+                                value={f.value ?? ""}
+                                onChange={f.onChange}
+                              />
+                            )}
+                          />
                         </FormField>
                       </motion.div>
                     )}
