@@ -65,7 +65,6 @@ export const insuranceFormSchema = z.object({
   hasAccidentRider: z.boolean().optional(),
   hasHospitalDaily: z.boolean().optional(),
   existingPolicyActive: z.enum(["active", "inactive"]).optional(),
-  sumInsured: z.number().optional(), // ทุนประกัน
 
   // Previous insurance - question 2
   wasPreviouslyRejected: z.boolean(),

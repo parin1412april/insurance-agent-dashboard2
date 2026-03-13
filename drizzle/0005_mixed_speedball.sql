@@ -1,1 +1,0 @@
-ALTER TABLE `insurance_submissions` ADD `sumInsured` int;

@@ -37,7 +37,6 @@ import {
   Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DrumDatePicker } from "@/components/DrumDatePicker";
 
 // Bank brand colors for visual identification
 const BANK_COLORS: Record<string, string> = {
@@ -210,7 +209,6 @@ export default function InsuranceForm() {
       hasAccidentRider: false,
       hasHospitalDaily: false,
       existingPolicyActive: undefined,
-      sumInsured: undefined,
       wasPreviouslyRejected: false,
       rejectedCompany: "",
       rejectedReason: "",
@@ -651,16 +649,7 @@ export default function InsuranceForm() {
                         <Input placeholder="กรอกนามสกุล" {...register("spouseLastName")} className="h-11" />
                       </FormField>
                       <FormField label="วันเดือนปีเกิดคู่สมรส" error={errors.spouseBirthDate?.message}>
-                        <Controller
-                          name="spouseBirthDate"
-                          control={control}
-                          render={({ field: f }) => (
-                            <DrumDatePicker
-                              value={f.value ?? ""}
-                              onChange={f.onChange}
-                            />
-                          )}
-                        />
+                        <Input type="date" {...register("spouseBirthDate")} className="h-11" />
                       </FormField>
                     </div>
                   </motion.div>
@@ -1019,27 +1008,24 @@ export default function InsuranceForm() {
                         />
                       </FormField>
                       <FormField label="วันเกิด" error={errors.beneficiaries?.[index]?.birthDate?.message} required>
-                        <Controller
-                          name={`beneficiaries.${index}.birthDate`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <DrumDatePicker
-                              value={f.value ?? ""}
-                              onChange={(dateStr) => {
-                                f.onChange(dateStr);
-                                if (dateStr) {
-                                  const today = new Date();
-                                  const birth = new Date(dateStr);
-                                  let age = today.getFullYear() - birth.getFullYear();
-                                  const monthDiff = today.getMonth() - birth.getMonth();
-                                  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                                    age--;
-                                  }
-                                  setValue(`beneficiaries.${index}.age`, age);
+                        <Input
+                          type="date"
+                          {...register(`beneficiaries.${index}.birthDate`, {
+                            onChange: (e) => {
+                              const birthDate = e.target.value;
+                              if (birthDate) {
+                                const today = new Date();
+                                const birth = new Date(birthDate);
+                                let age = today.getFullYear() - birth.getFullYear();
+                                const monthDiff = today.getMonth() - birth.getMonth();
+                                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                                  age--;
                                 }
-                              }}
-                            />
-                          )}
+                                setValue(`beneficiaries.${index}.age`, age);
+                              }
+                            },
+                          })}
+                          className="h-10"
                         />
                       </FormField>
                       <FormField label="อายุ" error={errors.beneficiaries?.[index]?.age?.message} required>
@@ -1273,31 +1259,6 @@ export default function InsuranceForm() {
                             )}
                           />
                         </div>
-                        {/* ทุนประกัน - shown when hasExistingInsurance is true */}
-                        <div className="mt-4 pt-4 border-t border-border/50">
-                          <p className="text-sm font-medium text-foreground mb-2">ทุนประกัน</p>
-                          <Controller
-                            name="sumInsured"
-                            control={control}
-                            render={({ field }) => (
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  placeholder="0"
-                                  value={field.value != null ? field.value.toLocaleString('th-TH') : ''}
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(/,/g, '');
-                                    const num = parseInt(raw, 10);
-                                    field.onChange(isNaN(num) ? undefined : num);
-                                  }}
-                                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-12"
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">บาท</span>
-                              </div>
-                            )}
-                          />
-                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1395,16 +1356,7 @@ export default function InsuranceForm() {
                         </FormField>
 
                         <FormField label="เมื่อ" error={errors.rejectedDate?.message}>
-                          <Controller
-                            name="rejectedDate"
-                            control={control}
-                            render={({ field: f }) => (
-                              <DrumDatePicker
-                                value={f.value ?? ""}
-                                onChange={f.onChange}
-                              />
-                            )}
-                          />
+                          <Input type="date" {...register("rejectedDate")} className="h-11" />
                         </FormField>
                       </motion.div>
                     )}
