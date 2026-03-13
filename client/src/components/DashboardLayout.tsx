@@ -39,7 +39,6 @@ const allMenuItems: MenuItem[] = [
   { icon: Kanban, label: "ติดตามเคส", path: "/" },
   { icon: Users, label: "ติดตามผู้มุ่งหวัง", path: "/leads" },
   { icon: HelpCircle, label: "Q&A", path: "/qa" },
-  { icon: User, label: "ข้อมูลส่วนตัว", path: "/profile" },
   { icon: Shield, label: "Admin", path: "/admin", adminOnly: true },
 ];
 
@@ -252,7 +251,14 @@ function DashboardLayoutContent({
                   ) : (
                     <Moon className="mr-2 h-4 w-4" />
                   )}
-                  <span>{theme === "dark" ? "โหมดสว่าง" : "โหมดมืด"}</span>
+                  <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLocation("/profile")}
+                  className="cursor-pointer"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  <span>ข้อมูลส่วนตัว</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={logout}

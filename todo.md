@@ -49,3 +49,5 @@
 - [x] Q&A: register route /qa in App.tsx
 - [x] Q&A: upload document files (JPG/PDF) from zip to CDN
 - [x] Q&A: update faqData.ts URLs to CDN links
+- [x] Sidebar: move "ข้อมูลส่วนตัว" from nav list to user menu (after dark mode toggle)
+- [x] Sidebar: rename "โหมดมืด" to "Dark Mode"
