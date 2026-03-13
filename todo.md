@@ -60,3 +60,4 @@
 - [x] KeyApp: add nav item in sidebar after ติดตามผู้มุ่งหวัง
 - [x] KeyApp: register routes in App.tsx
 - [x] KeyApp: write vitest tests
+- [x] InsuranceForm: fix header color to dark navy (matching original design)

@@ -159,6 +159,17 @@
     min-height: 0;
     min-width: 0;
   }
+  /* Insurance Form styles */
+  .elegant-gradient {
+    background: linear-gradient(135deg, oklch(0.25 0.06 260) 0%, oklch(0.20 0.05 260) 50%, oklch(0.28 0.06 270) 100%);
+  }
+  .gold-accent {
+    color: oklch(0.78 0.12 85);
+  }
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, oklch(0.78 0.12 85 / 40%), transparent);
+  }
 
   @media (min-width: 640px) {
     .container {
