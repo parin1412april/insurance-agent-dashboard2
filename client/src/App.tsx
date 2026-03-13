@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage";
 import QAPage from "./pages/QAPage";
 import KeyAppPage from "./pages/KeyAppPage";
 import InsuranceForm from "./pages/InsuranceForm";
+import HomePage from "./pages/HomePage";
 
 function Router() {
   return (
@@ -22,7 +23,8 @@ function Router() {
       <Route>
         <DashboardLayout>
           <Switch>
-            <Route path="/" component={KanbanBoard} />
+            <Route path="/" component={HomePage} />
+            <Route path="/kanban" component={KanbanBoard} />
             <Route path="/profile" component={ProfilePage} />
             <Route path="/leads" component={LeadsBoard} />
             <Route path="/keyapp" component={KeyAppPage} />

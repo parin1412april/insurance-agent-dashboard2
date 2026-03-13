@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { insuranceFormSchema } from "@shared/insurance";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import { agentProfiles, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
+import { agentProfiles, calendarEvents, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
 import { systemRouter } from "./_core/systemRouter";
@@ -582,7 +582,69 @@ const insuranceRouter = router({
   }),
 });
 
-// ── App router ───────────────────────────────────────────────────────
+// ── Calendar router ──────────────────────────────────────────────────────────────
+const calendarEventSchema = z.object({
+  title: z.string().min(1).max(300),
+  description: z.string().optional(),
+  eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  color: z.enum(["blue", "red", "green", "orange", "purple", "amber"]).default("blue"),
+  allDay: z.number().int().min(0).max(1).default(0),
+});
+
+const calendarRouter = router({
+  // Public: list events for a given month (year+month)
+  list: protectedProcedure
+    .input(z.object({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const prefix = `${input.year}-${String(input.month).padStart(2, "0")}`;
+      const rows = await db
+        .select()
+        .from(calendarEvents)
+        .where(sql`${calendarEvents.eventDate} LIKE ${prefix + "-%"}`)
+        .orderBy(calendarEvents.eventDate, calendarEvents.startTime);
+      return rows;
+    }),
+
+  // Admin: create event
+  create: adminProcedure
+    .input(calendarEventSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(calendarEvents).values({
+        ...input,
+        createdBy: ctx.user.id,
+      });
+      return { id: (result as any).insertId as number };
+    }),
+
+  // Admin: update event
+  update: adminProcedure
+    .input(calendarEventSchema.extend({ id: z.number().int() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      await db.update(calendarEvents).set(data).where(eq(calendarEvents.id, id));
+      return { success: true };
+    }),
+
+  // Admin: delete event
+  delete: adminProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(calendarEvents).where(eq(calendarEvents.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ── App router ────────────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -598,6 +660,7 @@ export const appRouter = router({
   admin: adminRouter,
   leads: leadsRouter,
   insurance: insuranceRouter,
+  calendar: calendarRouter,
 });
 
 export type AppRouter = typeof appRouter;

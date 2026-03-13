@@ -184,3 +184,24 @@ export const beneficiaries = mysqlTable("beneficiaries", {
 
 export type Beneficiary = typeof beneficiaries.$inferSelect;
 export type InsertBeneficiary = typeof beneficiaries.$inferInsert;
+
+/**
+ * Calendar events – shared team calendar managed by admin.
+ * All users can view; only admin can create/update/delete.
+ */
+export const calendarEvents = mysqlTable("calendar_events", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  description: text("description"),
+  eventDate: varchar("eventDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  startTime: varchar("startTime", { length: 5 }), // HH:MM, null = all-day
+  endTime: varchar("endTime", { length: 5 }), // HH:MM, null = all-day
+  color: varchar("color", { length: 30 }).notNull().default("blue"), // blue | red | green | orange | purple | amber
+  allDay: int("allDay").notNull().default(0),
+  createdBy: int("createdBy").notNull(), // userId of admin who created it
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;

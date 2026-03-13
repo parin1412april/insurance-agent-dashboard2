@@ -63,3 +63,10 @@
 - [x] InsuranceForm: fix header color to dark navy (matching original design)
 - [x] InsuranceForm: fix all colors to match original design (section circles, radio borders, icons, inputs, background)
 - [x] Sidebar: เพิ่มปุ่ม "สรุปเบี้ยประกัน" ต่อจาก "ข้อมูล KeyApp" พร้อม popup ยืนยันก่อนเด้งไป https://finally.manus.space/
+- [x] Home Calendar: เพิ่มตาราง calendar_events ใน schema (title, date, time, color, allDay, createdBy)
+- [x] Home Calendar: เพิ่ม tRPC procedures (getEvents public, createEvent/updateEvent/deleteEvent admin-only)
+- [x] Home Calendar: สร้างหน้า HomePage.tsx พร้อม Month Calendar UI
+- [x] Home Calendar: Admin เพิ่ม/แก้ไข/ลบ event ได้ผ่าน dialog, user ทั่วไปดูได้อย่างเดียว
+- [x] Home Calendar: เพิ่ม nav item "หน้าหลัก" เป็นรายการแรกใน sidebar
+- [x] Home Calendar: register route / ใน App.tsx
+- [x] Home Calendar: เขียน vitest tests
