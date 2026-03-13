@@ -292,7 +292,7 @@ export default function InsuranceForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="insurance-form-page min-h-screen bg-background">
         <div className="elegant-gradient py-16 px-4">
           <div className="max-w-lg mx-auto text-center">
             <motion.div
@@ -339,7 +339,7 @@ export default function InsuranceForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="insurance-form-page min-h-screen" style={{backgroundColor: 'oklch(0.965 0.005 85)'}}>
       {/* Header */}
       <div className="elegant-gradient py-12 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">

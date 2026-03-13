@@ -61,3 +61,4 @@
 - [x] KeyApp: register routes in App.tsx
 - [x] KeyApp: write vitest tests
 - [x] InsuranceForm: fix header color to dark navy (matching original design)
+- [x] InsuranceForm: fix all colors to match original design (section circles, radio borders, icons, inputs, background)
