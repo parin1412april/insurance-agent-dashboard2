@@ -51,3 +51,12 @@
 - [x] Q&A: update faqData.ts URLs to CDN links
 - [x] Sidebar: move "ข้อมูลส่วนตัว" from nav list to user menu (after dark mode toggle)
 - [x] Sidebar: rename "โหมดมืด" to "Dark Mode"
+- [x] KeyApp: add insuranceSubmissions + beneficiaries tables to schema.ts
+- [x] KeyApp: run db:push to migrate
+- [x] KeyApp: port shared/insurance.ts schema from zip
+- [x] KeyApp: add insurance tRPC procedures (submit public, list/detail/delete protected by agentCode)
+- [x] KeyApp: build public InsuranceForm page at /form/:agentCode (no login required)
+- [x] KeyApp: build KeyAppPage.tsx - dashboard tab showing own submissions only
+- [x] KeyApp: add nav item in sidebar after ติดตามผู้มุ่งหวัง
+- [x] KeyApp: register routes in App.tsx
+- [x] KeyApp: write vitest tests

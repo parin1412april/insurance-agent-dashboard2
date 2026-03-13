@@ -10,20 +10,30 @@ import KanbanBoard from "./pages/KanbanBoard";
 import LeadsBoard from "./pages/LeadsBoard";
 import ProfilePage from "./pages/ProfilePage";
 import QAPage from "./pages/QAPage";
+import KeyAppPage from "./pages/KeyAppPage";
+import InsuranceForm from "./pages/InsuranceForm";
 
 function Router() {
   return (
-    <DashboardLayout>
-      <Switch>
-        <Route path="/" component={KanbanBoard} />
-        <Route path="/profile" component={ProfilePage} />
-        <Route path="/leads" component={LeadsBoard} />
-        <Route path="/qa" component={QAPage} />
-        <Route path="/admin" component={AdminDashboard} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
-    </DashboardLayout>
+    <Switch>
+      {/* Public route - no login required */}
+      <Route path="/form/:agentCode" component={InsuranceForm} />
+      {/* Protected dashboard routes */}
+      <Route>
+        <DashboardLayout>
+          <Switch>
+            <Route path="/" component={KanbanBoard} />
+            <Route path="/profile" component={ProfilePage} />
+            <Route path="/leads" component={LeadsBoard} />
+            <Route path="/keyapp" component={KeyAppPage} />
+            <Route path="/qa" component={QAPage} />
+            <Route path="/admin" component={AdminDashboard} />
+            <Route path="/404" component={NotFound} />
+            <Route component={NotFound} />
+          </Switch>
+        </DashboardLayout>
+      </Route>
+    </Switch>
   );
 }
 

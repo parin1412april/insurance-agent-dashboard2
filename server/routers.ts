@@ -1,11 +1,15 @@
 import { COOKIE_NAME } from "@shared/const";
+import { insuranceFormSchema } from "@shared/insurance";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { agentProfiles, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { notifyOwner } from "./_core/notification";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { getDb } from "./db";
+import { getDb, createInsuranceSubmission, getInsuranceSubmissions, getInsuranceSubmissionById, deleteInsuranceSubmission, getInsuranceSubmissionStats } from "./db";
+import { storagePut } from "./storage";
+import { nanoid } from "nanoid";
 
 // ── Zod schemas ──────────────────────────────────────────────────────
 const columnStatusEnum = z.enum([
@@ -449,6 +453,135 @@ const leadsRouter = router({
     }),
 });
 
+// ── Insurance router ─────────────────────────────────────────────────
+const insuranceRouter = router({
+  // Public: submit form (no login required)
+  submit: publicProcedure
+    .input(insuranceFormSchema)
+    .mutation(async ({ input }) => {
+      const { beneficiaries: beneficiaryList, agentCode, ...formData } = input as any;
+      const result = await createInsuranceSubmission(
+        {
+          agentCode: agentCode || "",
+          prefix: formData.prefix || "",
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          nickname: formData.nickname || null,
+          phone: formData.phone,
+          email: formData.email,
+          occupation: formData.occupation,
+          position: formData.position,
+          height: String(formData.height),
+          weight: String(formData.weight),
+          annualIncome: String(formData.annualIncome),
+          idCardStatus: formData.idCardStatus,
+          idCardImageUrl: formData.idCardImageUrl || null,
+          maritalStatus: formData.maritalStatus,
+          spouseFirstName: formData.spouseFirstName || null,
+          spouseLastName: formData.spouseLastName || null,
+          spouseBirthDate: formData.spouseBirthDate || null,
+          useIdCardAddress: formData.useIdCardAddress ? 1 : 0,
+          addressLine: formData.addressLine || null,
+          subDistrict: formData.subDistrict || null,
+          district: formData.district || null,
+          province: formData.province || null,
+          postalCode: formData.postalCode || null,
+          benefitPaymentMethod: formData.benefitPaymentMethod,
+          bankName: formData.bankName || null,
+          bankAccountNumber: formData.bankAccountNumber || null,
+          policyDelivery: formData.policyDelivery,
+          paymentMethod: formData.paymentMethod,
+          hasExistingInsurance: formData.hasExistingInsurance ? 1 : 0,
+          existingInsuranceCompany: formData.existingInsuranceCompany || null,
+          hasLifeInsurance: formData.hasLifeInsurance ? 1 : 0,
+          hasCriticalIllness: formData.hasCriticalIllness ? 1 : 0,
+          hasAccidentRider: formData.hasAccidentRider ? 1 : 0,
+          hasHospitalDaily: formData.hasHospitalDaily ? 1 : 0,
+          existingPolicyActive: formData.existingPolicyActive || null,
+          wasPreviouslyRejected: formData.wasPreviouslyRejected ? 1 : 0,
+          rejectedCompany: formData.rejectedCompany || null,
+          rejectedReason: formData.rejectedReason || null,
+          rejectedDate: formData.rejectedDate || null,
+        },
+        (beneficiaryList || []).map((b: any) => ({
+          gender: b.gender,
+          age: b.age,
+          prefix: b.prefix,
+          firstName: b.firstName,
+          lastName: b.lastName,
+          percentage: String(b.percentage),
+          relationship: b.relationship,
+        }))
+      );
+      try {
+        await notifyOwner({
+          title: `มีลูกค้ากรอกข้อมูลประกันใหม่ (รหัสตัวแทน: ${agentCode})`,
+          content: `ลูกค้า: ${formData.firstName} ${formData.lastName}\nเบอร์โทร: ${formData.phone}\nรหัสอ้างอิง: ${result.submissionRef}`,
+        });
+      } catch (e) {
+        console.warn("[Notification] Failed:", e);
+      }
+      return { success: true, submissionRef: result.submissionRef };
+    }),
+
+  // Public: upload ID card image
+  uploadImage: publicProcedure
+    .input(z.object({ base64: z.string(), mimeType: z.string() }))
+    .mutation(async ({ input }) => {
+      const buffer = Buffer.from(input.base64, "base64");
+      const ext = input.mimeType.split("/")[1] || "jpg";
+      const key = `id-cards/${nanoid(12)}.${ext}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      return { url };
+    }),
+
+  // Protected: list own submissions
+  list: protectedProcedure
+    .input(z.object({ page: z.number().min(1).default(1), limit: z.number().min(1).max(100).default(20), search: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const profile = await db.select().from(agentProfiles).where(eq(agentProfiles.userId, ctx.user.id)).limit(1);
+      const agentCode = profile[0]?.agentCode || "";
+      if (!agentCode) return { items: [], total: 0, page: 1, limit: input.limit, totalPages: 0 };
+      return getInsuranceSubmissions({ agentCode, ...input });
+    }),
+
+  // Protected: get detail
+  detail: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const profile = await db.select().from(agentProfiles).where(eq(agentProfiles.userId, ctx.user.id)).limit(1);
+      const agentCode = profile[0]?.agentCode || "";
+      return getInsuranceSubmissionById(input.id, agentCode);
+    }),
+
+  // Protected: delete own submission
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const profile = await db.select().from(agentProfiles).where(eq(agentProfiles.userId, ctx.user.id)).limit(1);
+      const agentCode = profile[0]?.agentCode || "";
+      const ok = await deleteInsuranceSubmission(input.id, agentCode);
+      if (!ok) throw new Error("Not found or not authorized");
+      return { success: true };
+    }),
+
+  // Protected: stats
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const profile = await db.select().from(agentProfiles).where(eq(agentProfiles.userId, ctx.user.id)).limit(1);
+    const agentCode = profile[0]?.agentCode || "";
+    if (!agentCode) return { total: 0, today: 0 };
+    return getInsuranceSubmissionStats(agentCode);
+  }),
+});
+
 // ── App router ───────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -464,6 +597,7 @@ export const appRouter = router({
   kanban: kanbanRouter,
   admin: adminRouter,
   leads: leadsRouter,
+  insurance: insuranceRouter,
 });
 
 export type AppRouter = typeof appRouter;

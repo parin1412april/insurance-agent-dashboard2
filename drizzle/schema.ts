@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -105,3 +105,82 @@ export const leads = mysqlTable("leads", {
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+/**
+ * Insurance form submissions – customers fill this via /form/:agentCode
+ * agentCode links the submission to the agent who shared the link.
+ */
+export const insuranceSubmissions = mysqlTable("insurance_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  agentCode: varchar("agentCode", { length: 50 }).notNull().default(""),
+  // Personal info
+  prefix: varchar("prefix", { length: 20 }).notNull().default(""),
+  firstName: varchar("firstName", { length: 100 }).notNull(),
+  lastName: varchar("lastName", { length: 100 }).notNull(),
+  nickname: varchar("nickname", { length: 100 }),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  occupation: varchar("occupation", { length: 200 }).notNull(),
+  position: varchar("position", { length: 200 }).notNull(),
+  height: decimal("height", { precision: 5, scale: 1 }).notNull(),
+  weight: decimal("weight", { precision: 5, scale: 1 }).notNull(),
+  annualIncome: decimal("annualIncome", { precision: 15, scale: 2 }).notNull(),
+  // ID Card
+  idCardStatus: mysqlEnum("idCardStatus", ["sent", "not_sent"]).default("not_sent").notNull(),
+  idCardImageUrl: text("idCardImageUrl"),
+  // Marital status
+  maritalStatus: mysqlEnum("maritalStatus", ["single", "married", "divorced", "widowed"]).default("single").notNull(),
+  spouseFirstName: varchar("spouseFirstName", { length: 100 }),
+  spouseLastName: varchar("spouseLastName", { length: 100 }),
+  spouseBirthDate: varchar("spouseBirthDate", { length: 20 }),
+  // Address
+  useIdCardAddress: int("useIdCardAddress").default(0).notNull(),
+  addressLine: text("addressLine"),
+  subDistrict: varchar("subDistrict", { length: 100 }),
+  district: varchar("district", { length: 100 }),
+  province: varchar("province", { length: 100 }),
+  postalCode: varchar("postalCode", { length: 10 }),
+  // Payment
+  benefitPaymentMethod: mysqlEnum("benefitPaymentMethod", ["bank_account", "promptpay"]).notNull(),
+  bankName: varchar("bankName", { length: 100 }),
+  bankAccountNumber: varchar("bankAccountNumber", { length: 50 }),
+  policyDelivery: mysqlEnum("policyDelivery", ["e_document", "paper_customer", "paper_agent"]).notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", ["qr_transfer", "credit_debit"]).notNull(),
+  // Existing insurance
+  hasExistingInsurance: int("hasExistingInsurance").default(0).notNull(),
+  existingInsuranceCompany: varchar("existingInsuranceCompany", { length: 200 }),
+  hasLifeInsurance: int("hasLifeInsurance").default(0).notNull(),
+  hasCriticalIllness: int("hasCriticalIllness").default(0).notNull(),
+  hasAccidentRider: int("hasAccidentRider").default(0).notNull(),
+  hasHospitalDaily: int("hasHospitalDaily").default(0).notNull(),
+  existingPolicyActive: mysqlEnum("existingPolicyActive", ["active", "inactive"]),
+  wasPreviouslyRejected: int("wasPreviouslyRejected").default(0).notNull(),
+  rejectedCompany: varchar("rejectedCompany", { length: 200 }),
+  rejectedReason: varchar("rejectedReason", { length: 500 }),
+  rejectedDate: varchar("rejectedDate", { length: 20 }),
+  // Metadata
+  submissionRef: varchar("submissionRef", { length: 20 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type InsuranceSubmission = typeof insuranceSubmissions.$inferSelect;
+export type InsertInsuranceSubmission = typeof insuranceSubmissions.$inferInsert;
+
+/**
+ * Beneficiaries linked to insurance submissions.
+ */
+export const beneficiaries = mysqlTable("beneficiaries", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submissionId").notNull(),
+  gender: mysqlEnum("gender", ["male", "female"]).notNull(),
+  age: int("age").notNull(),
+  prefix: varchar("prefix", { length: 50 }).notNull(),
+  firstName: varchar("firstName", { length: 100 }).notNull(),
+  lastName: varchar("lastName", { length: 100 }).notNull(),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).notNull(),
+  relationship: varchar("relationship", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Beneficiary = typeof beneficiaries.$inferSelect;
+export type InsertBeneficiary = typeof beneficiaries.$inferInsert;
