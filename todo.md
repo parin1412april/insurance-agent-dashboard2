@@ -62,3 +62,4 @@
 - [x] KeyApp: write vitest tests
 - [x] InsuranceForm: fix header color to dark navy (matching original design)
 - [x] InsuranceForm: fix all colors to match original design (section circles, radio borders, icons, inputs, background)
+- [x] Sidebar: เพิ่มปุ่ม "สรุปเบี้ยประกัน" ต่อจาก "ข้อมูล KeyApp" พร้อม popup ยืนยันก่อนเด้งไป https://finally.manus.space/

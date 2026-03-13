@@ -21,12 +21,21 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Kanban, FileKey, HelpCircle, LogOut, Moon, PanelLeft, Shield, Sun, User, Users } from "lucide-react";
+import { Kanban, FileKey, HelpCircle, LogOut, Moon, PanelLeft, Shield, Sun, User, Users, BarChart3, ExternalLink } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
-import { Button } from "./ui/button";
+
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -35,12 +44,22 @@ interface MenuItem {
   adminOnly?: boolean;
 }
 
+const PREMIUM_CALC_URL = "https://finally.manus.space/";
+
 const allMenuItems: MenuItem[] = [
   { icon: Kanban, label: "ติดตามเคส", path: "/" },
   { icon: Users, label: "ติดตามผู้มุ่งหวัง", path: "/leads" },
   { icon: FileKey, label: "ข้อมูล KeyApp", path: "/keyapp" },
   { icon: HelpCircle, label: "Q&A", path: "/qa" },
   { icon: Shield, label: "Admin", path: "/admin", adminOnly: true },
+];
+
+const EXTERNAL_MENU_ITEMS = [
+  {
+    icon: BarChart3,
+    label: "สรุปเบี้ยประกัน",
+    url: PREMIUM_CALC_URL,
+  },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -136,6 +155,7 @@ function DashboardLayoutContent({
   }, [user?.role]);
 
   const activeMenuItem = menuItems.find((item) => item.path === location);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -221,6 +241,26 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+
+            {/* External links section */}
+            <div className="px-2 py-1 mt-1">
+              <div className="h-px bg-border mx-2 mb-2" />
+              <SidebarMenu>
+                {EXTERNAL_MENU_ITEMS.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      onClick={() => setShowPremiumDialog(true)}
+                      tooltip={item.label}
+                      className="h-10 transition-all font-normal text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-950/30"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                      <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
           </SidebarContent>
 
           <SidebarFooter className="p-3">
@@ -281,6 +321,46 @@ function DashboardLayoutContent({
           style={{ zIndex: 50 }}
         />
       </div>
+
+      {/* Premium Calculator Redirect Dialog */}
+      <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5 text-amber-500" />
+              สรุปเบี้ยประกัน
+            </DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-1">
+              คุณกำลังจะเข้าสู่ <span className="font-semibold text-foreground">FinAlly Premium Calculator</span> — เครื่องมือเปรียบเทียบแบบประกันและคำนวณเบี้ยจากหลายบริษัทในที่เดียว
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 my-1">
+            <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">ระบบจะเปิดในแท็บใหม่</p>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              เปรียบเทียบแผนประกัน · คำนวณเบี้ยรายปี · สรุปผลประโยชน์ให้ลูกค้าเข้าใจง่าย
+            </p>
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowPremiumDialog(false)}
+              className="flex-1"
+            >
+              ยังไม่ไป
+            </Button>
+            <Button
+              onClick={() => {
+                window.open(PREMIUM_CALC_URL, "_blank", "noopener,noreferrer");
+                setShowPremiumDialog(false);
+              }}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              ไปเลย
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SidebarInset>
         {isMobile && (
