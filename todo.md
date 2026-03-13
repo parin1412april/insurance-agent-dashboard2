@@ -42,3 +42,8 @@
 - [x] Lead CRM: confetti animation when card moved to Closed Won
 - [x] Lead CRM: add/edit card dialog with all fields
 - [x] Lead CRM: add navigation link in sidebar
+- [x] Q&A: copy faqData.ts to project lib
+- [x] Q&A: copy FAQCard, FAQTimeline, SearchBar, DocumentPreview, Sidebar components
+- [x] Q&A: create QAPage.tsx integrating all FAQ components
+- [x] Q&A: add navigation link in sidebar (after ติดตามผู้มุ่งหวัง)
+- [x] Q&A: register route /qa in App.tsx
