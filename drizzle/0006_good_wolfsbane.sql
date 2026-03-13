@@ -1,0 +1,1 @@
+ALTER TABLE `insurance_submissions` DROP COLUMN `sumInsured`;

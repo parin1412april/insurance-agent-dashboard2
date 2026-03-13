@@ -154,6 +154,7 @@ export const insuranceSubmissions = mysqlTable("insurance_submissions", {
   hasAccidentRider: int("hasAccidentRider").default(0).notNull(),
   hasHospitalDaily: int("hasHospitalDaily").default(0).notNull(),
   existingPolicyActive: mysqlEnum("existingPolicyActive", ["active", "inactive"]),
+  sumInsured: int("sumInsured"), // ทุนประกัน
   wasPreviouslyRejected: int("wasPreviouslyRejected").default(0).notNull(),
   rejectedCompany: varchar("rejectedCompany", { length: 200 }),
   rejectedReason: varchar("rejectedReason", { length: 500 }),

@@ -209,6 +209,7 @@ export default function InsuranceForm() {
       hasAccidentRider: false,
       hasHospitalDaily: false,
       existingPolicyActive: undefined,
+      sumInsured: undefined,
       wasPreviouslyRejected: false,
       rejectedCompany: "",
       rejectedReason: "",
@@ -1255,6 +1256,32 @@ export default function InsuranceForm() {
                                 >
                                   ไม่มีผลบังคับ
                                 </button>
+                              </div>
+                            )}
+                          />
+                        </div>
+
+                        {/* ทุนประกัน */}
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <p className="text-sm font-medium text-foreground mb-2">ทุนประกัน</p>
+                          <Controller
+                            name="sumInsured"
+                            control={control}
+                            render={({ field }) => (
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  value={field.value != null ? Number(field.value).toLocaleString('th-TH') : ''}
+                                  onChange={(e) => {
+                                    const raw = e.target.value.replace(/,/g, '');
+                                    const num = parseInt(raw, 10);
+                                    field.onChange(isNaN(num) ? undefined : num);
+                                  }}
+                                  className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-14"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">บาท</span>
                               </div>
                             )}
                           />

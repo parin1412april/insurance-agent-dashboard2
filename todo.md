@@ -71,3 +71,4 @@
 - [x] Home Calendar: register route / ใน App.tsx
 - [x] Home Calendar: เขียน vitest tests
 - [x] LeadsBoard: แสดงข้อความใน card เต็ม (ไม่ตัด ...) โดย default, เพิ่ม toggle checkbox "ย่อข้อความ" ก่อนปุ่ม + เพิ่มผู้หวัง
+- [x] InsuranceForm: เพิ่ม field "ทุนประกัน" ใน section ข้อ 9 พร้อม comma format, อัปเดต schema/DB

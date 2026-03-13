@@ -498,6 +498,7 @@ const insuranceRouter = router({
           hasAccidentRider: formData.hasAccidentRider ? 1 : 0,
           hasHospitalDaily: formData.hasHospitalDaily ? 1 : 0,
           existingPolicyActive: formData.existingPolicyActive || null,
+          sumInsured: formData.sumInsured ?? null,
           wasPreviouslyRejected: formData.wasPreviouslyRejected ? 1 : 0,
           rejectedCompany: formData.rejectedCompany || null,
           rejectedReason: formData.rejectedReason || null,
