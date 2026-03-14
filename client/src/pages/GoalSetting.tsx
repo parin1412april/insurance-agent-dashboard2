@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Target, Clock, TrendingUp, Users, Calendar, CheckCircle2, Circle } from "lucide-react";
 
 // ─── Goal Definitions ─────────────────────────────────────────────────────────
@@ -174,12 +175,16 @@ export default function GoalSetting() {
   const [selectedGoal, setSelectedGoal] = useState<GoalKey>("MDRT");
   const [customFYP, setCustomFYP] = useState(2000000);
   const [avgCaseSize, setAvgCaseSize] = useState(80000);
+  const [currentFYPInput, setCurrentFYPInput] = useState(""); // raw input string
   const [prospectToAppt, setProspectToAppt] = useState(50); // %
   const [apptToPres, setApptToPres] = useState(70); // %
   const [presToClose, setPresToClose] = useState(30); // %
 
   const goal = GOALS.find((g) => g.key === selectedGoal)!;
   const targetFYP = selectedGoal === "OTHERS" ? customFYP : goal.fyp;
+  const currentFYP = Math.min(targetFYP, Math.max(0, Number(currentFYPInput.replace(/,/g, "")) || 0));
+  const remainingFYP = Math.max(0, targetFYP - currentFYP);
+  const progressToGoal = targetFYP > 0 ? Math.min(100, (currentFYP / targetFYP) * 100) : 0;
 
   // ─── Core Calculation ─────────────────────────────────────────────────────
   const calc = useMemo(() => {
@@ -188,7 +193,7 @@ export default function GoalSetting() {
     const pAppt = apptToPres / 100;
     const pProspect = prospectToAppt / 100;
 
-    const totalCases = targetFYP / safeCaseSize;
+    const totalCases = remainingFYP / safeCaseSize;
     const totalPres = totalCases / Math.max(0.01, pClose);
     const totalAppt = totalPres / Math.max(0.01, pAppt);
     const totalProspects = totalAppt / Math.max(0.01, pProspect);
@@ -203,7 +208,7 @@ export default function GoalSetting() {
       weeklyAppt: Math.ceil(totalAppt / remainingWeeks),
       weeklyProspects: Math.ceil(totalProspects / remainingWeeks),
     };
-  }, [targetFYP, avgCaseSize, presToClose, apptToPres, prospectToAppt, remainingWeeks]);
+  }, [remainingFYP, avgCaseSize, presToClose, apptToPres, prospectToAppt, remainingWeeks]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -346,6 +351,41 @@ export default function GoalSetting() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Current FYP */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-medium">FYP ณ ปัจจุบัน</label>
+              <span className="text-xs text-muted-foreground">
+                {currentFYP > 0 ? `เหลืออีก ${fmt(remainingFYP)} บาท` : "ยังไม่ได้กรอก"}
+              </span>
+            </div>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder="0 บาท (ยอด FYP ที่ทำได้แล้ว)"
+              value={currentFYPInput}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                setCurrentFYPInput(raw ? Number(raw).toLocaleString() : "");
+              }}
+              className="text-right font-mono"
+            />
+            {currentFYP > 0 && (
+              <div className="mt-2">
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>ความคืบหน้า</span>
+                  <span>{progressToGoal.toFixed(1)}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                    style={{ width: `${progressToGoal}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Average Case Size */}
           <div>
             <div className="flex justify-between items-center mb-2">
@@ -433,6 +473,11 @@ export default function GoalSetting() {
           <p className="text-xs text-muted-foreground mt-1">
             เป้าหมาย FYP: <span className="font-bold text-foreground">{fmt(targetFYP)} บาท</span>
             {" · "}Case เฉลี่ย: <span className="font-bold text-foreground">{fmt(avgCaseSize)} บาท</span>
+            {currentFYP > 0 && (
+              <>
+                {" · "}FYP ที่เหลือ: <span className="font-bold text-orange-600 dark:text-orange-400">{fmt(remainingFYP)} บาท</span>
+              </>
+            )}
           </p>
         </CardHeader>
         <CardContent>
@@ -480,10 +525,10 @@ export default function GoalSetting() {
           <div className="mt-5 p-3 rounded-xl bg-muted/40 text-center">
             <div className="text-xs text-muted-foreground mb-1">FYP ที่ต้องทำต่อสัปดาห์</div>
             <div className="text-2xl font-black">
-              {fmt(Math.ceil(targetFYP / remainingWeeks))} บาท
+              {fmt(Math.ceil(remainingFYP / remainingWeeks))} บาท
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              ≈ {fmt(Math.ceil(targetFYP / remainingWeeks * 4))} บาท / เดือน
+              ≈ {fmt(Math.ceil(remainingFYP / remainingWeeks * 4))} บาท / เดือน
             </div>
           </div>
         </CardContent>
