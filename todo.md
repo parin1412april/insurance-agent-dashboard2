@@ -76,3 +76,4 @@
 - [x] Calendar: เพิ่มฟีเจอร์อัปโหลดรูปใน event (S3 + DB + UI)
 - [x] Calendar: เพิ่มปุ่ม "Add to Calendar" ข้างๆ dropdown สีใน EventFormDialog ให้ export .ics file
 - [x] HomePage: เพิ่ม Timeline upcoming events ใต้ calendar เรียงจากใกล้สุดไปไกลสุด ซ่อน event ที่ผ่านไปแล้ว
+- [x] HomePage Timeline: แสดง poster รูปใหญ่เต็มๆ พร้อมรายละเอียดและปุ่ม Add to Calendar ด้านล่าง โดยไม่ต้องกดอะไรก่อน

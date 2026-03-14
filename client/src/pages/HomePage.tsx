@@ -559,15 +559,78 @@ export default function HomePage() {
 }
 
 // ─── Upcoming Events Timeline ─────────────────────────────────────────────────
+function downloadICS(ev: CalendarEvent) {
+  const dtDate = ev.eventDate.replace(/-/g, "");
+  let dtStart: string;
+  let dtEnd: string;
+  if (ev.allDay === 1) {
+    dtStart = `DTSTART;VALUE=DATE:${dtDate}`;
+    dtEnd = `DTEND;VALUE=DATE:${dtDate}`;
+  } else {
+    const st = (ev.startTime || "00:00").replace(":", "") + "00";
+    const et = (ev.endTime || ev.startTime || "01:00").replace(":", "") + "00";
+    dtStart = `DTSTART:${dtDate}T${st}`;
+    dtEnd = `DTEND:${dtDate}T${et}`;
+  }
+  const uid = `${ev.id}-${Date.now()}@finally-app`;
+  const desc = ev.description ? ev.description.replace(/\n/g, "\\n") : "";
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//FinAlly//Calendar//TH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    dtStart,
+    dtEnd,
+    `SUMMARY:${ev.title}`,
+    desc ? `DESCRIPTION:${desc}` : "",
+    ev.imageUrl ? `ATTACH:${ev.imageUrl}` : "",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${ev.title.replace(/[^a-zA-Z0-9\u0E00-\u0E7F]/g, "_")}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function UpcomingTimeline() {
   const { data: events = [], isLoading } = trpc.calendar.upcoming.useQuery();
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+  const formatDateFull = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const thaiYear = y + 543;
+    const monthName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][m - 1];
+    const dayName = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"][new Date(y, m - 1, d).getDay()];
+    return `วัน${dayName}ที่ ${d} ${monthName} ${thaiYear}`;
+  };
+
+  const getBadge = (dateStr: string) => {
+    if (dateStr === todayStr) return { text: "วันนี้", cls: "bg-primary text-primary-foreground" };
+    if (dateStr === tomorrowStr) return { text: "พรุ่งนี้", cls: "bg-amber-500 text-white" };
+    return null;
+  };
+
   if (isLoading) {
     return (
-      <div className="shrink-0 space-y-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">กิจกรรมที่กำลังจะมาถึง</h2>
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-24 rounded-xl bg-muted/50 animate-pulse" />
+      <div className="shrink-0 space-y-4 pb-6">
+        <h2 className="text-base font-bold">กิจกรรมที่กำลังจะมาถึง</h2>
+        {[1, 2].map(i => (
+          <div key={i} className="rounded-2xl overflow-hidden border shadow-sm">
+            <div className="aspect-[16/9] bg-muted animate-pulse" />
+            <div className="p-4 space-y-2">
+              <div className="h-5 w-2/3 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-1/3 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -575,111 +638,83 @@ function UpcomingTimeline() {
 
   if (events.length === 0) {
     return (
-      <div className="shrink-0 py-6 text-center text-sm text-muted-foreground">
+      <div className="shrink-0 py-8 text-center text-sm text-muted-foreground">
         ยังไม่มีกิจกรรมที่กำลังจะมาถึง
       </div>
     );
   }
 
-  // Group events by date
-  const grouped: Record<string, typeof events> = {};
-  for (const ev of events) {
-    if (!grouped[ev.eventDate]) grouped[ev.eventDate] = [];
-    grouped[ev.eventDate].push(ev);
-  }
-  const sortedDates = Object.keys(grouped).sort();
-
-  const todayStr = new Date().toISOString().slice(0, 10);
-
-  const formatDateLabel = (dateStr: string) => {
-    const [y, m, d] = dateStr.split("-").map(Number);
-    const thaiYear = y + 543;
-    const monthName = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][m - 1];
-    const isToday = dateStr === todayStr;
-    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-    const isTomorrow = dateStr === tomorrowStr;
-    const label = `${d} ${monthName} ${thaiYear}`;
-    if (isToday) return { label, badge: "วันนี้", badgeClass: "bg-primary text-primary-foreground" };
-    if (isTomorrow) return { label, badge: "พรุ่งนี้", badgeClass: "bg-amber-500 text-white" };
-    return { label, badge: null, badgeClass: "" };
-  };
-
   return (
-    <div className="shrink-0 space-y-4 pb-4">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">กิจกรรมที่กำลังจะมาถึง</h2>
-      <div className="relative">
-        {/* Timeline vertical line */}
-        <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
-        <div className="space-y-6">
-          {sortedDates.map((dateStr) => {
-            const { label, badge, badgeClass } = formatDateLabel(dateStr);
-            return (
-              <div key={dateStr} className="relative">
-                {/* Date node */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="relative z-10 h-9 w-9 rounded-full bg-background border-2 border-primary flex items-center justify-center shrink-0">
-                    <span className="text-[10px] font-bold text-primary leading-none">
-                      {dateStr.split("-")[2]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">{label}</span>
-                    {badge && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badgeClass}`}>
-                        {badge}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {/* Event cards */}
-                <div className="ml-12 space-y-2">
-                  {grouped[dateStr].map((ev) => {
-                    const c = COLOR_MAP[(ev.color as EventColor) ?? "blue"];
-                    return (
-                      <div
-                        key={ev.id}
-                        className={`rounded-xl border overflow-hidden shadow-sm bg-card`}
-                      >
-                        {/* Color bar */}
-                        <div className={`h-1 w-full ${c.bar}`} />
-                        <div className="p-3 flex gap-3">
-                          {/* Image */}
-                          {ev.imageUrl && (
-                            <img
-                              src={ev.imageUrl}
-                              alt={ev.title}
-                              className="h-16 w-16 rounded-lg object-cover shrink-0"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-semibold text-sm leading-snug line-clamp-2">{ev.title}</p>
-                              {!ev.allDay && ev.startTime && (
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ""}
-                                </span>
-                              )}
-                              {ev.allDay === 1 && (
-                                <span className="text-xs text-muted-foreground shrink-0">ทั้งวัน</span>
-                              )}
-                            </div>
-                            {ev.description && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-line">
-                                {ev.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+    <div className="shrink-0 space-y-5 pb-6">
+      <h2 className="text-base font-bold">กิจกรรมที่กำลังจะมาถึง</h2>
+      {events.map((ev) => {
+        const c = COLOR_MAP[(ev.color as EventColor) ?? "blue"];
+        const badge = getBadge(ev.eventDate);
+        const timeLabel = ev.allDay === 1
+          ? "ทั้งวัน"
+          : ev.startTime
+            ? `${ev.startTime}${ev.endTime ? ` – ${ev.endTime}` : ""} น.`
+            : null;
+
+        return (
+          <div key={ev.id} className="rounded-2xl overflow-hidden border shadow-sm bg-card">
+            {/* Poster image — full width */}
+            {ev.imageUrl ? (
+              <img
+                src={ev.imageUrl}
+                alt={ev.title}
+                className="w-full object-cover max-h-[480px]"
+              />
+            ) : (
+              /* Placeholder banner with color */
+              <div className={`w-full h-32 flex items-center justify-center ${c.bar} opacity-20`} />
+            )}
+
+            {/* Details */}
+            <div className="p-4 space-y-2">
+              {/* Date + badge */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {formatDateFull(ev.eventDate)}
+                </span>
+                {badge && (
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badge.cls}`}>
+                    {badge.text}
+                  </span>
+                )}
+                {timeLabel && (
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${c.badge}`}>
+                    {timeLabel}
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
-      </div>
+
+              {/* Title */}
+              <h3 className="text-base font-bold leading-snug">{ev.title}</h3>
+
+              {/* Description */}
+              {ev.description && (
+                <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                  {ev.description}
+                </p>
+              )}
+
+              {/* Add to Calendar button */}
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 w-full sm:w-auto"
+                  onClick={() => downloadICS(ev as CalendarEvent)}
+                >
+                  <CalendarPlus className="h-4 w-4" />
+                  Add to Calendar
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
