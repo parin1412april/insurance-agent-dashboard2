@@ -89,3 +89,4 @@
 - [x] Calendar Tag System: สีของ event card ใน calendar มาจาก orgTag (AIA=แดง, 912=ม่วง, ฯลฯ)
 - [x] Calendar Tag System: เพิ่ม filter bar 2 แถว (องค์กร + คอร์ส) ใต้ปฏิทิน
 - [x] Calendar: courseTag เปลี่ยนเป็น multi-select (เลือกได้หลายอัน) — เก็บเป็น JSON array ใน DB
+- [x] Calendar: filter (องค์กร + คอร์ส) ส่งผลต่อ Upcoming Timeline ด้วย

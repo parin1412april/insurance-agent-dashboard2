@@ -800,7 +800,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Upcoming Events Timeline ─────────────────────────────── */}
-      <UpcomingTimeline />
+      <UpcomingTimeline filterOrg={filterOrg} filterCourse={filterCourse} />
 
       {/* Event form dialog */}
       {showForm && (
@@ -865,8 +865,22 @@ function downloadICS(ev: CalendarEvent) {
   URL.revokeObjectURL(url);
 }
 
-function UpcomingTimeline() {
-  const { data: events = [], isLoading } = trpc.calendar.upcoming.useQuery();
+function UpcomingTimeline({ filterOrg, filterCourse }: { filterOrg: OrgTag | null; filterCourse: CourseTag | null }) {
+  const { data: allEvents = [], isLoading } = trpc.calendar.upcoming.useQuery();
+
+  // Apply same filters as calendar grid
+  const events = allEvents.filter((ev) => {
+    const typedEv = ev as CalendarEvent;
+    if (filterOrg && typedEv.orgTag !== filterOrg) return false;
+    if (filterCourse) {
+      const tags: string[] = (() => {
+        if (!typedEv.courseTag) return [];
+        try { return JSON.parse(typedEv.courseTag) as string[]; } catch { return [typedEv.courseTag]; }
+      })();
+      if (!tags.includes(filterCourse)) return false;
+    }
+    return true;
+  });
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date();
