@@ -22,6 +22,9 @@ import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, Calendar
 import { useState, useMemo, useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+type OrgTag = "AIA" | "912" | "FinAlly" | "Heartworker" | "Financiaka" | "MergeMingle";
+type CourseTag = "Products" | "ULP" | "Recruit" | "CS" | "FA" | "MDRT" | "Prestige" | "IT";
+
 type CalendarEvent = {
   id: number;
   title: string;
@@ -32,8 +35,26 @@ type CalendarEvent = {
   color: string;
   allDay: number;
   imageUrl?: string | null;
+  orgTag?: string | null;
+  courseTag?: string | null;
   createdBy: number;
 };
+
+const ORG_TAGS: { value: OrgTag; label: string; color: string; dot: string; badge: string; bar: string }[] = [
+  { value: "AIA",        label: "AIA",         color: "red",    dot: "bg-red-500",     badge: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",         bar: "bg-red-500" },
+  { value: "912",        label: "912",         color: "purple", dot: "bg-purple-500",  badge: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300", bar: "bg-purple-500" },
+  { value: "FinAlly",    label: "FinAlly",     color: "blue",   dot: "bg-blue-500",   badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",       bar: "bg-blue-500" },
+  { value: "Heartworker",label: "Heartworker", color: "green",  dot: "bg-emerald-500",badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", bar: "bg-emerald-500" },
+  { value: "Financiaka", label: "Financiaka",  color: "amber",  dot: "bg-amber-500",  badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",   bar: "bg-amber-500" },
+  { value: "MergeMingle",label: "MergeMingle", color: "orange", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", bar: "bg-orange-500" },
+];
+
+const COURSE_TAGS: CourseTag[] = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT"];
+
+function getOrgStyle(orgTag?: string | null) {
+  const org = ORG_TAGS.find(o => o.value === orgTag);
+  return org ?? { dot: "bg-blue-500", badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300", bar: "bg-blue-500", color: "blue" };
+}
 
 type EventColor = "blue" | "red" | "green" | "orange" | "purple" | "amber";
 
@@ -84,6 +105,8 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   const [imageUrl, setImageUrl] = useState<string | null>(event?.imageUrl ?? null);
   const [imagePreview, setImagePreview] = useState<string | null>(event?.imageUrl ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [orgTag, setOrgTag] = useState<OrgTag | "">(event?.orgTag as OrgTag ?? "");
+  const [courseTag, setCourseTag] = useState<CourseTag | "">(event?.courseTag as CourseTag ?? "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImageMutation = trpc.calendar.uploadImage.useMutation({
@@ -125,15 +148,19 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
 
   const handleSubmit = () => {
     if (!title.trim() || !eventDate) return;
+    // Derive color from orgTag automatically
+    const derivedColor = orgTag ? (getOrgStyle(orgTag).color as EventColor) : color;
     const payload = {
       title: title.trim(),
       description: description || undefined,
       eventDate,
       startTime: allDay ? undefined : (startTime || undefined),
       endTime: allDay ? undefined : (endTime || undefined),
-      color,
+      color: derivedColor,
       allDay: allDay ? 1 : 0,
       imageUrl: imageUrl ?? undefined,
+      orgTag: orgTag || undefined,
+      courseTag: courseTag || undefined,
     };
     if (event) {
       updateMutation.mutate({ id: event.id, ...payload });
@@ -196,10 +223,57 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
             </div>
           )}
 
-          {/* Color + Add to Calendar */}
+          {/* Org Tag */}
           <div className="grid gap-1.5">
-            <Label>สี</Label>
+            <Label>องค์กร</Label>
+            <div className="flex flex-wrap gap-2">
+              {ORG_TAGS.map((org) => (
+                <button
+                  key={org.value}
+                  type="button"
+                  onClick={() => setOrgTag(orgTag === org.value ? "" : org.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
+                    orgTag === org.value
+                      ? `${org.dot} text-white border-transparent`
+                      : "bg-transparent border-border text-muted-foreground hover:border-primary"
+                  }`}
+                >
+                  <span className={`h-2.5 w-2.5 rounded-full ${org.dot}`} />
+                  {org.label}
+                </button>
+              ))}
+            </div>
+            {orgTag && (
+              <p className="text-xs text-muted-foreground">สีของ event จะถูกกำหนดอัตโนมัติตามองค์กร</p>
+            )}
+          </div>
+
+          {/* Course Tag */}
+          <div className="grid gap-1.5">
+            <Label>หมวดคอร์ส</Label>
+            <div className="flex flex-wrap gap-2">
+              {COURSE_TAGS.map((ct) => (
+                <button
+                  key={ct}
+                  type="button"
+                  onClick={() => setCourseTag(courseTag === ct ? "" : ct)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
+                    courseTag === ct
+                      ? "bg-primary text-primary-foreground border-transparent"
+                      : "bg-transparent border-border text-muted-foreground hover:border-primary"
+                  }`}
+                >
+                  {ct}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color (only shown when no orgTag) + Add to Calendar */}
+          <div className="grid gap-1.5">
+            {!orgTag && <Label>สี</Label>}
             <div className="flex items-center gap-2">
+              {!orgTag && (
               <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
                 <SelectTrigger className="flex-1">
                   <SelectValue />
@@ -215,6 +289,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
                   ))}
                 </SelectContent>
               </Select>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -468,6 +543,8 @@ export default function HomePage() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewingEvent, setViewingEvent] = useState<CalendarEvent | null>(null);
+  const [filterOrg, setFilterOrg] = useState<OrgTag | null>(null);
+  const [filterCourse, setFilterCourse] = useState<CourseTag | null>(null);
 
   const utils = trpc.useUtils();
   const { data: events = [] } = trpc.calendar.list.useQuery({ year: currentYear, month: currentMonth });
@@ -475,15 +552,24 @@ export default function HomePage() {
     onSuccess: () => utils.calendar.list.invalidate(),
   });
 
+  // Filter events based on active filters
+  const filteredEvents = useMemo(() => {
+    return (events as CalendarEvent[]).filter(ev => {
+      if (filterOrg && ev.orgTag !== filterOrg) return false;
+      if (filterCourse && ev.courseTag !== filterCourse) return false;
+      return true;
+    });
+  }, [events, filterOrg, filterCourse]);
+
   // Build event map: dateStr → events[]
   const eventMap = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
-    for (const ev of events) {
+    for (const ev of filteredEvents) {
       if (!map[ev.eventDate]) map[ev.eventDate] = [];
       map[ev.eventDate].push(ev as CalendarEvent);
     }
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDow = getFirstDayOfWeek(currentYear, currentMonth); // 0=Sun
@@ -609,15 +695,15 @@ export default function HomePage() {
                 {/* Events */}
                 <div className="flex flex-col gap-0.5 overflow-hidden">
                   {dayEvents.slice(0, 3).map((ev) => {
-                    const c = COLOR_MAP[(ev.color as EventColor)] ?? COLOR_MAP.blue;
+                    const style = ev.orgTag ? getOrgStyle(ev.orgTag) : (COLOR_MAP[(ev.color as EventColor)] ?? COLOR_MAP.blue);
                     return (
                       <div
                         key={ev.id}
-                        className={`flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${c.badge} cursor-pointer hover:brightness-95 active:brightness-90 transition-all`}
+                        className={`flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${style.badge} cursor-pointer hover:brightness-95 active:brightness-90 transition-all`}
                         onClick={(e) => { e.stopPropagation(); openDetail(ev as CalendarEvent); }}
                         title="คลิกเพื่อดูรายละเอียด"
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
                         <span className="truncate flex-1">
                           {ev.startTime && !ev.allDay ? `${ev.startTime} ` : ""}
                           {ev.title}
@@ -637,14 +723,59 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Color legend */}
-      <div className="flex items-center gap-3 flex-wrap shrink-0">
-        {(Object.entries(COLOR_MAP) as [EventColor, (typeof COLOR_MAP)[EventColor]][]).map(([key, val]) => (
-          <div key={key} className="flex items-center gap-1">
-            <span className={`w-2.5 h-2.5 rounded-full ${val.dot}`} />
-            <span className="text-xs text-muted-foreground capitalize">{key}</span>
-          </div>
-        ))}
+      {/* Filter bars */}
+      <div className="flex flex-col gap-2 shrink-0">
+        {/* Org filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground font-medium w-12 shrink-0">องค์กร</span>
+          <button
+            onClick={() => setFilterOrg(null)}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+              filterOrg === null ? "bg-foreground text-background border-transparent" : "border-border text-muted-foreground hover:border-primary"
+            }`}
+          >
+            ทั้งหมด
+          </button>
+          {ORG_TAGS.map((org) => (
+            <button
+              key={org.value}
+              onClick={() => setFilterOrg(filterOrg === org.value ? null : org.value)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                filterOrg === org.value
+                  ? `${org.dot} text-white border-transparent`
+                  : "border-border text-muted-foreground hover:border-primary"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${org.dot}`} />
+              {org.label}
+            </button>
+          ))}
+        </div>
+        {/* Course filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground font-medium w-12 shrink-0">คอร์ส</span>
+          <button
+            onClick={() => setFilterCourse(null)}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+              filterCourse === null ? "bg-foreground text-background border-transparent" : "border-border text-muted-foreground hover:border-primary"
+            }`}
+          >
+            ทั้งหมด
+          </button>
+          {COURSE_TAGS.map((ct) => (
+            <button
+              key={ct}
+              onClick={() => setFilterCourse(filterCourse === ct ? null : ct)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                filterCourse === ct
+                  ? "bg-primary text-primary-foreground border-transparent"
+                  : "border-border text-muted-foreground hover:border-primary"
+              }`}
+            >
+              {ct}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Upcoming Events Timeline ─────────────────────────────── */}

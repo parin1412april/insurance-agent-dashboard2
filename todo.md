@@ -84,3 +84,7 @@
 - [x] Calendar: เปิดสิทธิ์ให้ทุก user (ไม่ใช่แค่ admin) เพิ่ม แก้ไข และลบ event ได้
 - [x] Calendar: ปรับ frontend ลบ isAdmin condition ออกจาก UI ปุ่มเพิ่ม/แก้ไข/ลบ
 - [x] Calendar: ปรับ backend routers ให้ใช้ protectedProcedure แทน adminProcedure สำหรับ calendar CRUD
+- [x] Calendar Tag System: เพิ่ม orgTag และ courseTag columns ใน DB schema + migrate
+- [x] Calendar Tag System: ปรับ EventFormDialog เพิ่ม tag picker 2 หมวด (องค์กร + คอร์ส)
+- [x] Calendar Tag System: สีของ event card ใน calendar มาจาก orgTag (AIA=แดง, 912=ม่วง, ฯลฯ)
+- [x] Calendar Tag System: เพิ่ม filter bar 2 แถว (องค์กร + คอร์ส) ใต้ปฏิทิน

@@ -584,6 +584,9 @@ const insuranceRouter = router({
 });
 
 // ── Calendar router ──────────────────────────────────────────────────────────────
+const ORG_TAGS = ["AIA", "912", "FinAlly", "Heartworker", "Financiaka", "MergeMingle"] as const;
+const COURSE_TAGS = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT"] as const;
+
 const calendarEventSchema = z.object({
   title: z.string().min(1).max(300),
   description: z.string().optional(),
@@ -593,6 +596,8 @@ const calendarEventSchema = z.object({
   color: z.enum(["blue", "red", "green", "orange", "purple", "amber"]).default("blue"),
   allDay: z.number().int().min(0).max(1).default(0),
   imageUrl: z.string().url().optional(),
+  orgTag: z.enum(ORG_TAGS).optional(),
+  courseTag: z.enum(COURSE_TAGS).optional(),
 });
 
 const calendarRouter = router({

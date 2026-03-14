@@ -200,7 +200,9 @@ export const calendarEvents = mysqlTable("calendar_events", {
   color: varchar("color", { length: 30 }).notNull().default("blue"), // blue | red | green | orange | purple | amber
   allDay: int("allDay").notNull().default(0),
   imageUrl: varchar("imageUrl", { length: 1000 }), // S3 URL for event image
-  createdBy: int("createdBy").notNull(), // userId of admin who created it
+  orgTag: varchar("orgTag", { length: 50 }), // AIA | 912 | FinAlly | Heartworker | Financiaka | MergeMingle
+  courseTag: varchar("courseTag", { length: 50 }), // Products | ULP | Recruit | CS | FA | MDRT | Prestige | IT
+  createdBy: int("createdBy").notNull(), // userId who created it
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
