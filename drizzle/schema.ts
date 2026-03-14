@@ -201,7 +201,7 @@ export const calendarEvents = mysqlTable("calendar_events", {
   allDay: int("allDay").notNull().default(0),
   imageUrl: varchar("imageUrl", { length: 1000 }), // S3 URL for event image
   orgTag: varchar("orgTag", { length: 50 }), // AIA | 912 | FinAlly | Heartworker | Financiaka | MergeMingle
-  courseTag: varchar("courseTag", { length: 50 }), // Products | ULP | Recruit | CS | FA | MDRT | Prestige | IT
+  courseTag: varchar("courseTag", { length: 200 }), // JSON array e.g. ["ULP","MDRT"] — multi-select
   createdBy: int("createdBy").notNull(), // userId who created it
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

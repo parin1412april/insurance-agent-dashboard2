@@ -106,7 +106,16 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   const [imagePreview, setImagePreview] = useState<string | null>(event?.imageUrl ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [orgTag, setOrgTag] = useState<OrgTag | "">(event?.orgTag as OrgTag ?? "");
-  const [courseTag, setCourseTag] = useState<CourseTag | "">(event?.courseTag as CourseTag ?? "");
+  // Parse existing courseTag JSON array or empty array
+  const [courseTags, setCourseTags] = useState<CourseTag[]>(() => {
+    if (!event?.courseTag) return [];
+    try { return JSON.parse(event.courseTag) as CourseTag[]; } catch { return []; }
+  });
+  const toggleCourseTag = (ct: CourseTag) => {
+    setCourseTags(prev =>
+      prev.includes(ct) ? prev.filter(t => t !== ct) : [...prev, ct]
+    );
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImageMutation = trpc.calendar.uploadImage.useMutation({
@@ -160,7 +169,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
       allDay: allDay ? 1 : 0,
       imageUrl: imageUrl ?? undefined,
       orgTag: orgTag || undefined,
-      courseTag: courseTag || undefined,
+      courseTags: courseTags.length > 0 ? courseTags : undefined,
     };
     if (event) {
       updateMutation.mutate({ id: event.id, ...payload });
@@ -248,17 +257,17 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
             )}
           </div>
 
-          {/* Course Tag */}
+          {/* Course Tag (multi-select) */}
           <div className="grid gap-1.5">
-            <Label>หมวดคอร์ส</Label>
+            <Label>หมวดคอร์ส <span className="text-xs text-muted-foreground font-normal">(เลือกได้หลายอัน)</span></Label>
             <div className="flex flex-wrap gap-2">
               {COURSE_TAGS.map((ct) => (
                 <button
                   key={ct}
                   type="button"
-                  onClick={() => setCourseTag(courseTag === ct ? "" : ct)}
+                  onClick={() => toggleCourseTag(ct)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
-                    courseTag === ct
+                    courseTags.includes(ct)
                       ? "bg-primary text-primary-foreground border-transparent"
                       : "bg-transparent border-border text-muted-foreground hover:border-primary"
                   }`}
@@ -267,6 +276,9 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
                 </button>
               ))}
             </div>
+            {courseTags.length > 0 && (
+              <p className="text-xs text-muted-foreground">เลือกแล้ว: {courseTags.join(", ")}</p>
+            )}
           </div>
 
           {/* Color (only shown when no orgTag) + Add to Calendar */}
@@ -552,11 +564,20 @@ export default function HomePage() {
     onSuccess: () => utils.calendar.list.invalidate(),
   });
 
+  // Parse courseTag JSON array helper
+  const parseCourseTagsFromEvent = (ev: CalendarEvent): string[] => {
+    if (!ev.courseTag) return [];
+    try { return JSON.parse(ev.courseTag) as string[]; } catch { return [ev.courseTag]; }
+  };
+
   // Filter events based on active filters
   const filteredEvents = useMemo(() => {
     return (events as CalendarEvent[]).filter(ev => {
       if (filterOrg && ev.orgTag !== filterOrg) return false;
-      if (filterCourse && ev.courseTag !== filterCourse) return false;
+      if (filterCourse) {
+        const tags = parseCourseTagsFromEvent(ev);
+        if (!tags.includes(filterCourse)) return false;
+      }
       return true;
     });
   }, [events, filterOrg, filterCourse]);

@@ -1,0 +1,1 @@
+ALTER TABLE `calendar_events` MODIFY COLUMN `courseTag` varchar(200);

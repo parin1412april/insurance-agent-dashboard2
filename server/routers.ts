@@ -597,7 +597,8 @@ const calendarEventSchema = z.object({
   allDay: z.number().int().min(0).max(1).default(0),
   imageUrl: z.string().url().optional(),
   orgTag: z.enum(ORG_TAGS).optional(),
-  courseTag: z.enum(COURSE_TAGS).optional(),
+  // courseTag is now a multi-select array, stored as JSON string in DB
+  courseTags: z.array(z.enum(COURSE_TAGS)).optional(),
 });
 
 const calendarRouter = router({
@@ -622,8 +623,10 @@ const calendarRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      const { courseTags, ...rest } = input;
       const [result] = await db.insert(calendarEvents).values({
-        ...input,
+        ...rest,
+        courseTag: courseTags && courseTags.length > 0 ? JSON.stringify(courseTags) : null,
         createdBy: ctx.user.id,
       });
       return { id: (result as any).insertId as number };
@@ -635,8 +638,11 @@ const calendarRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const { id, ...data } = input;
-      await db.update(calendarEvents).set(data).where(eq(calendarEvents.id, id));
+      const { id, courseTags, ...rest } = input;
+      await db.update(calendarEvents).set({
+        ...rest,
+        courseTag: courseTags && courseTags.length > 0 ? JSON.stringify(courseTags) : null,
+      }).where(eq(calendarEvents.id, id));
       return { success: true };
     }),
 
