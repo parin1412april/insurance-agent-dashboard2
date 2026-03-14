@@ -611,8 +611,8 @@ const calendarRouter = router({
       return rows;
     }),
 
-  // Admin: create event
-  create: adminProcedure
+  // All users: create event
+  create: protectedProcedure
     .input(calendarEventSchema)
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -624,8 +624,8 @@ const calendarRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  // Admin: update event
-  update: adminProcedure
+  // All users: update event
+  update: protectedProcedure
     .input(calendarEventSchema.extend({ id: z.number().int() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -635,8 +635,8 @@ const calendarRouter = router({
       return { success: true };
     }),
 
-  // Admin: upload event image
-  uploadImage: adminProcedure
+  // All users: upload event image
+  uploadImage: protectedProcedure
     .input(z.object({ base64: z.string(), mimeType: z.string() }))
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.base64, "base64");
@@ -646,8 +646,8 @@ const calendarRouter = router({
       return { url };
     }),
 
-  // Admin: delete event
-  delete: adminProcedure
+  // All users: delete event
+  delete: protectedProcedure
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

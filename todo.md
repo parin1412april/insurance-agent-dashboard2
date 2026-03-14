@@ -81,3 +81,6 @@
 - [x] Calendar: Event Detail Dialog สำหรับ user → แสดงข้อมูลอย่างเดียว (ชื่อ, วันที่, เวลา, หมายเหตุ, รูป) + Add to Calendar
 - [x] Calendar: Event Detail Dialog สำหรับ admin → แสดงข้อมูลเหมือน user + ปุ่มแก้ไขและลบกิจกรรม
 - [x] Calendar: ลบ hover icon (pencil/trash) ออกจาก event card ในตาราง
+- [x] Calendar: เปิดสิทธิ์ให้ทุก user (ไม่ใช่แค่ admin) เพิ่ม แก้ไข และลบ event ได้
+- [x] Calendar: ปรับ frontend ลบ isAdmin condition ออกจาก UI ปุ่มเพิ่ม/แก้ไข/ลบ
+- [x] Calendar: ปรับ backend routers ให้ใช้ protectedProcedure แทน adminProcedure สำหรับ calendar CRUD

@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -460,8 +459,6 @@ function EventDetailDialog({ open, onClose, event: ev, isAdmin, onEdit, onDelete
 
 // ─── Main Calendar Page ───────────────────────────────────────────────────────
 export default function HomePage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
   const today = new Date();
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -550,12 +547,10 @@ export default function HomePage() {
           </div>
           <Button variant="outline" size="sm" onClick={goToday}>วันนี้</Button>
         </div>
-        {isAdmin && (
-          <Button size="sm" onClick={() => openAdd()}>
-            <Plus className="h-4 w-4 mr-1" />
-            เพิ่ม Event
-          </Button>
-        )}
+        <Button size="sm" onClick={() => openAdd()}>
+          <Plus className="h-4 w-4 mr-1" />
+          เพิ่ม Event
+        </Button>
       </div>
 
       {/* Calendar grid */}
@@ -588,9 +583,9 @@ export default function HomePage() {
               <div
                 key={idx}
                 className={`min-h-[80px] p-1 flex flex-col gap-0.5 ${
-                  isCurrentMonth ? "bg-background hover:bg-accent/20" : "bg-muted/20"
-                } ${isAdmin && isCurrentMonth ? "cursor-pointer" : ""}`}
-                onClick={() => isAdmin && isCurrentMonth && openAdd(dateStr)}
+                  isCurrentMonth ? "bg-background hover:bg-accent/20 cursor-pointer" : "bg-muted/20"
+                }`}
+                onClick={() => isCurrentMonth && openAdd(dateStr)}
               >
                 {/* Day number */}
                 <div className="flex justify-end">
@@ -671,7 +666,7 @@ export default function HomePage() {
         open={!!viewingEvent}
         onClose={closeDetail}
         event={viewingEvent}
-        isAdmin={isAdmin}
+        isAdmin={true}
         onEdit={(ev) => openEdit(ev)}
         onDelete={(id) => deleteMutation.mutate({ id })}
       />
