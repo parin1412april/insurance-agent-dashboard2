@@ -162,7 +162,7 @@ function FunnelRow({
           <div className="text-[10px] opacity-70">/ สัปดาห์</div>
         </div>
       </div>
-      <div className="text-xs text-muted-foreground">รวม {fmt(total)} ครั้ง</div>
+
     </div>
   );
 }
