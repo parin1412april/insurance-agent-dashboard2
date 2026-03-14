@@ -199,6 +199,7 @@ export const calendarEvents = mysqlTable("calendar_events", {
   endTime: varchar("endTime", { length: 5 }), // HH:MM, null = all-day
   color: varchar("color", { length: 30 }).notNull().default("blue"), // blue | red | green | orange | purple | amber
   allDay: int("allDay").notNull().default(0),
+  imageUrl: varchar("imageUrl", { length: 1000 }), // S3 URL for event image
   createdBy: int("createdBy").notNull(), // userId of admin who created it
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -592,6 +592,7 @@ const calendarEventSchema = z.object({
   endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   color: z.enum(["blue", "red", "green", "orange", "purple", "amber"]).default("blue"),
   allDay: z.number().int().min(0).max(1).default(0),
+  imageUrl: z.string().url().optional(),
 });
 
 const calendarRouter = router({
@@ -632,6 +633,17 @@ const calendarRouter = router({
       const { id, ...data } = input;
       await db.update(calendarEvents).set(data).where(eq(calendarEvents.id, id));
       return { success: true };
+    }),
+
+  // Admin: upload event image
+  uploadImage: adminProcedure
+    .input(z.object({ base64: z.string(), mimeType: z.string() }))
+    .mutation(async ({ input }) => {
+      const buffer = Buffer.from(input.base64, "base64");
+      const ext = input.mimeType.split("/")[1] ?? "jpg";
+      const key = `calendar-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      return { url };
     }),
 
   // Admin: delete event

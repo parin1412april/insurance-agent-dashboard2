@@ -1,5 +1,4 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,8 +19,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type CalendarEvent = {
@@ -33,6 +32,7 @@ type CalendarEvent = {
   endTime?: string | null;
   color: string;
   allDay: number;
+  imageUrl?: string | null;
   createdBy: number;
 };
 
@@ -82,6 +82,18 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   const [endTime, setEndTime] = useState(event?.endTime ?? "");
   const [color, setColor] = useState<EventColor>((event?.color as EventColor) ?? "blue");
   const [allDay, setAllDay] = useState(event?.allDay === 1);
+  const [imageUrl, setImageUrl] = useState<string | null>(event?.imageUrl ?? null);
+  const [imagePreview, setImagePreview] = useState<string | null>(event?.imageUrl ?? null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadImageMutation = trpc.calendar.uploadImage.useMutation({
+    onSuccess: (data) => {
+      setImageUrl(data.url);
+      setUploadingImage(false);
+    },
+    onError: () => setUploadingImage(false),
+  });
 
   const createMutation = trpc.calendar.create.useMutation({
     onSuccess: () => { utils.calendar.list.invalidate(); onSaved(); onClose(); },
@@ -89,6 +101,28 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   const updateMutation = trpc.calendar.update.useMutation({
     onSuccess: () => { utils.calendar.list.invalidate(); onSaved(); onClose(); },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Preview
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      // Upload: strip data URL prefix
+      const base64 = dataUrl.split(",")[1];
+      setUploadingImage(true);
+      uploadImageMutation.mutate({ base64, mimeType: file.type });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = () => {
     if (!title.trim() || !eventDate) return;
@@ -100,6 +134,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
       endTime: allDay ? undefined : (endTime || undefined),
       color,
       allDay: allDay ? 1 : 0,
+      imageUrl: imageUrl ?? undefined,
     };
     if (event) {
       updateMutation.mutate({ id: event.id, ...payload });
@@ -112,23 +147,43 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-md mx-auto flex flex-col max-h-[90dvh] p-0 gap-0">
+        {/* Fixed header */}
+        <DialogHeader className="px-5 pt-5 pb-3 border-b shrink-0">
           <DialogTitle>{event ? "แก้ไข Event" : "เพิ่ม Event ใหม่"}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-2">
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 grid gap-4">
+          {/* Title */}
           <div className="grid gap-1.5">
             <Label htmlFor="ev-title">ชื่อ Event *</Label>
-            <Input id="ev-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="เช่น ประชุมทีม, อบรม AIA..." />
+            <Input
+              id="ev-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="เช่น ประชุมทีม, อบรม AIA..."
+            />
           </div>
+
+          {/* Date */}
           <div className="grid gap-1.5">
             <Label htmlFor="ev-date">วันที่ *</Label>
-            <Input id="ev-date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+            <Input
+              id="ev-date"
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+            />
           </div>
+
+          {/* All Day toggle */}
           <div className="flex items-center gap-3">
             <Switch id="ev-allday" checked={allDay} onCheckedChange={setAllDay} />
             <Label htmlFor="ev-allday" className="cursor-pointer">ทั้งวัน (All Day)</Label>
           </div>
+
+          {/* Time */}
           {!allDay && (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -141,6 +196,8 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
               </div>
             </div>
           )}
+
+          {/* Color */}
           <div className="grid gap-1.5">
             <Label>สี</Label>
             <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
@@ -159,14 +216,71 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
               </SelectContent>
             </Select>
           </div>
+
+          {/* Description */}
           <div className="grid gap-1.5">
             <Label htmlFor="ev-desc">หมายเหตุ</Label>
-            <Textarea id="ev-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
+            <Textarea
+              id="ev-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="resize-none"
+              placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+            />
+          </div>
+
+          {/* Image upload */}
+          <div className="grid gap-1.5">
+            <Label>รูปภาพ Event</Label>
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden border bg-muted">
+                <img
+                  src={imagePreview}
+                  alt="event preview"
+                  className="w-full max-h-48 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-white text-sm">กำลังอัปโหลด...</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer"
+              >
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-sm">คลิกเพื่อเลือกรูปภาพ</span>
+                <span className="text-xs">JPG, PNG, WEBP (สูงสุด 5MB)</span>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleImageChange}
+            />
           </div>
         </div>
-        <DialogFooter>
+
+        {/* Fixed footer */}
+        <DialogFooter className="px-5 py-4 border-t shrink-0 flex gap-2 justify-end">
           <Button variant="outline" onClick={onClose} disabled={isPending}>ยกเลิก</Button>
-          <Button onClick={handleSubmit} disabled={isPending || !title.trim() || !eventDate}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending || !title.trim() || !eventDate || uploadingImage}
+          >
             {isPending ? "กำลังบันทึก..." : event ? "บันทึก" : "เพิ่ม Event"}
           </Button>
         </DialogFooter>
@@ -220,72 +334,64 @@ export default function HomePage() {
 
   const todayStr = toDateStr(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
-  const handleDayClick = (dateStr: string) => {
-    if (!isAdmin) return;
-    setSelectedDate(dateStr);
+  const openAdd = (dateStr?: string) => {
     setEditingEvent(null);
+    setSelectedDate(dateStr ?? null);
     setShowForm(true);
   };
-
-  const handleEditEvent = (e: React.MouseEvent, ev: CalendarEvent) => {
-    e.stopPropagation();
+  const openEdit = (ev: CalendarEvent) => {
     setEditingEvent(ev);
+    setSelectedDate(null);
     setShowForm(true);
   };
-
-  const handleDeleteEvent = (e: React.MouseEvent, ev: CalendarEvent) => {
-    e.stopPropagation();
-    if (confirm(`ลบ "${ev.title}" ?`)) deleteMutation.mutate({ id: ev.id });
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingEvent(null);
+    setSelectedDate(null);
   };
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col h-full gap-4 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {THAI_MONTHS[currentMonth - 1]}{" "}
-            <span className="text-muted-foreground font-normal text-xl">
-              {currentYear + 543} BE
-            </span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button size="sm" onClick={() => { setEditingEvent(null); setSelectedDate(todayStr); setShowForm(true); }}>
-              <Plus className="h-4 w-4 mr-1" />
-              เพิ่ม Event
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={goToday}>วันนี้</Button>
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               className="px-3 py-1.5 hover:bg-accent transition-colors"
               onClick={prevMonth}
-              aria-label="เดือนก่อนหน้า"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <div className="w-px h-6 bg-border" />
+            <span className="px-3 py-1.5 text-sm font-semibold min-w-[140px] text-center">
+              {THAI_MONTHS[currentMonth - 1]} {currentYear + 543} BE
+            </span>
             <button
               className="px-3 py-1.5 hover:bg-accent transition-colors"
               onClick={nextMonth}
-              aria-label="เดือนถัดไป"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
+          <Button variant="outline" size="sm" onClick={goToday}>วันนี้</Button>
         </div>
+        {isAdmin && (
+          <Button size="sm" onClick={() => openAdd()}>
+            <Plus className="h-4 w-4 mr-1" />
+            เพิ่ม Event
+          </Button>
+        )}
       </div>
 
-      {/* Calendar Grid */}
+      {/* Calendar grid */}
       <div className="flex-1 border rounded-xl overflow-hidden bg-card shadow-sm">
         {/* Day-of-week header */}
         <div className="grid grid-cols-7 border-b bg-muted/30">
           {THAI_DAYS_SHORT.map((d, i) => (
             <div
               key={d}
-              className={`py-2 text-center text-xs font-semibold tracking-wide ${i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-muted-foreground"}`}
+              className={`py-2 text-center text-xs font-semibold ${
+                i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-muted-foreground"
+              }`}
             >
               {d}
             </div>
@@ -293,38 +399,40 @@ export default function HomePage() {
         </div>
 
         {/* Day cells */}
-        <div className="grid grid-cols-7 flex-1" style={{ gridAutoRows: "minmax(100px, 1fr)" }}>
+        <div className="grid grid-cols-7 divide-x divide-y h-[calc(100%-36px)]">
           {Array.from({ length: totalCells }).map((_, idx) => {
             const dayNum = idx - firstDow + 1;
             const isCurrentMonth = dayNum >= 1 && dayNum <= daysInMonth;
             const dateStr = isCurrentMonth ? toDateStr(currentYear, currentMonth, dayNum) : "";
             const isToday = dateStr === todayStr;
-            const dayEvents = (isCurrentMonth && eventMap[dateStr]) ? eventMap[dateStr] : [];
-            const dow = idx % 7; // 0=Sun, 6=Sat
+            const dow = idx % 7;
+            const dayEvents = dateStr ? (eventMap[dateStr] ?? []) : [];
 
             return (
               <div
                 key={idx}
-                onClick={() => isCurrentMonth && handleDayClick(dateStr)}
-                className={[
-                  "border-r border-b last:border-r-0 p-1.5 flex flex-col gap-0.5 min-h-[100px] transition-colors",
-                  isCurrentMonth ? (isAdmin ? "cursor-pointer hover:bg-accent/30" : "cursor-default") : "bg-muted/20 opacity-50",
-                  isToday ? "bg-primary/5 ring-1 ring-inset ring-primary/30" : "",
-                  dow === 0 ? "bg-red-50/30 dark:bg-red-950/10" : "",
-                  dow === 6 ? "bg-blue-50/30 dark:bg-blue-950/10" : "",
-                ].join(" ")}
+                className={`min-h-[80px] p-1 flex flex-col gap-0.5 ${
+                  isCurrentMonth ? "bg-background hover:bg-accent/20" : "bg-muted/20"
+                } ${isAdmin && isCurrentMonth ? "cursor-pointer" : ""}`}
+                onClick={() => isAdmin && isCurrentMonth && openAdd(dateStr)}
               >
                 {/* Day number */}
-                <div className="flex items-center justify-between mb-0.5">
-                  <span
-                    className={[
-                      "text-sm font-medium h-6 w-6 flex items-center justify-center rounded-full",
-                      isToday ? "bg-primary text-primary-foreground font-bold" : "",
-                      !isCurrentMonth ? "text-muted-foreground/40" : dow === 0 ? "text-red-500" : dow === 6 ? "text-blue-500" : "text-foreground",
-                    ].join(" ")}
-                  >
-                    {isCurrentMonth ? dayNum : ""}
-                  </span>
+                <div className="flex justify-end">
+                  {isCurrentMonth && (
+                    <span
+                      className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${
+                        isToday
+                          ? "bg-primary text-primary-foreground font-bold"
+                          : dow === 0
+                          ? "text-red-500"
+                          : dow === 6
+                          ? "text-blue-500"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {dayNum}
+                    </span>
+                  )}
                 </div>
 
                 {/* Events */}
@@ -334,35 +442,37 @@ export default function HomePage() {
                     return (
                       <div
                         key={ev.id}
-                        className={`group flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium truncate ${c.badge}`}
-                        onClick={(e) => e.stopPropagation()}
+                        className={`flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${c.badge} group relative`}
+                        onClick={(e) => { e.stopPropagation(); }}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.dot}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
                         <span className="truncate flex-1">
                           {ev.startTime && !ev.allDay ? `${ev.startTime} ` : ""}
                           {ev.title}
                         </span>
                         {isAdmin && (
-                          <span className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                          <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
                             <button
-                              onClick={(e) => handleEditEvent(e, ev)}
-                              className="opacity-70 hover:opacity-100 p-0.5 rounded hover:bg-black/10"
+                              className="p-0.5 rounded hover:bg-black/10"
+                              onClick={(e) => { e.stopPropagation(); openEdit(ev); }}
                             >
                               <Pencil className="h-2.5 w-2.5" />
                             </button>
                             <button
-                              onClick={(e) => handleDeleteEvent(e, ev)}
-                              className="opacity-70 hover:opacity-100 p-0.5 rounded hover:bg-red-200"
+                              className="p-0.5 rounded hover:bg-red-100 text-red-600"
+                              onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: ev.id }); }}
                             >
-                              <Trash2 className="h-2.5 w-2.5 text-red-600" />
+                              <Trash2 className="h-2.5 w-2.5" />
                             </button>
-                          </span>
+                          </div>
                         )}
                       </div>
                     );
                   })}
                   {dayEvents.length > 3 && (
-                    <span className="text-xs text-muted-foreground px-1">+{dayEvents.length - 3} เพิ่มเติม</span>
+                    <span className="text-[10px] text-muted-foreground px-1">
+                      +{dayEvents.length - 3} อื่นๆ
+                    </span>
                   )}
                 </div>
               </div>
@@ -371,27 +481,22 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground pb-1">
-        {!isAdmin && (
-          <span className="italic">ดูได้อย่างเดียว — เฉพาะ Admin เพิ่ม/แก้ไข Event ได้</span>
-        )}
-        <div className="flex items-center gap-2 ml-auto">
-          {(Object.keys(COLOR_MAP) as EventColor[]).map((c) => (
-            <div key={c} className="flex items-center gap-1">
-              <span className={`h-2 w-2 rounded-full ${COLOR_MAP[c].dot}`} />
-              <span className="capitalize">{c}</span>
-            </div>
-          ))}
-        </div>
+      {/* Color legend */}
+      <div className="flex items-center gap-3 flex-wrap shrink-0">
+        {(Object.entries(COLOR_MAP) as [EventColor, (typeof COLOR_MAP)[EventColor]][]).map(([key, val]) => (
+          <div key={key} className="flex items-center gap-1">
+            <span className={`w-2.5 h-2.5 rounded-full ${val.dot}`} />
+            <span className="text-xs text-muted-foreground capitalize">{key}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Event Form Dialog */}
+      {/* Event form dialog */}
       {showForm && (
         <EventFormDialog
           open={showForm}
-          onClose={() => { setShowForm(false); setEditingEvent(null); }}
-          initialDate={selectedDate ?? todayStr}
+          onClose={closeForm}
+          initialDate={selectedDate ?? undefined}
           event={editingEvent}
           onSaved={() => {}}
         />
