@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, CalendarPlus } from "lucide-react";
 import { useState, useMemo, useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -197,24 +197,74 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
             </div>
           )}
 
-          {/* Color */}
+          {/* Color + Add to Calendar */}
           <div className="grid gap-1.5">
             <Label>สี</Label>
-            <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(COLOR_MAP) as EventColor[]).map((c) => (
-                  <SelectItem key={c} value={c}>
-                    <div className="flex items-center gap-2">
-                      <span className={`h-3 w-3 rounded-full ${COLOR_MAP[c].dot}`} />
-                      <span className="capitalize">{c}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(COLOR_MAP) as EventColor[]).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      <div className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-full ${COLOR_MAP[c].dot}`} />
+                        <span className="capitalize">{c}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5 text-xs"
+                disabled={!title.trim() || !eventDate}
+                onClick={() => {
+                  // Build .ics content
+                  const dtDate = eventDate.replace(/-/g, "");
+                  let dtStart: string;
+                  let dtEnd: string;
+                  if (allDay) {
+                    dtStart = `DTSTART;VALUE=DATE:${dtDate}`;
+                    dtEnd = `DTEND;VALUE=DATE:${dtDate}`;
+                  } else {
+                    const st = (startTime || "00:00").replace(":", "") + "00";
+                    const et = (endTime || startTime || "01:00").replace(":", "") + "00";
+                    dtStart = `DTSTART:${dtDate}T${st}`;
+                    dtEnd = `DTEND:${dtDate}T${et}`;
+                  }
+                  const uid = `${Date.now()}@finally-app`;
+                  const desc = description ? description.replace(/\n/g, "\\n") : "";
+                  const ics = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//FinAlly//Calendar//TH",
+                    "BEGIN:VEVENT",
+                    `UID:${uid}`,
+                    dtStart,
+                    dtEnd,
+                    `SUMMARY:${title.trim()}`,
+                    desc ? `DESCRIPTION:${desc}` : "",
+                    imageUrl ? `ATTACH:${imageUrl}` : "",
+                    "END:VEVENT",
+                    "END:VCALENDAR",
+                  ].filter(Boolean).join("\r\n");
+                  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${title.trim().replace(/[^a-zA-Z0-9ก-๙]/g, "_")}.ics`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Add to Calendar
+              </Button>
+            </div>
           </div>
 
           {/* Description */}

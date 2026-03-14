@@ -74,3 +74,4 @@
 - [x] InsuranceForm: เพิ่ม field "ทุนประกัน" ใน section ข้อ 9 พร้อม comma format, อัปเดต schema/DB
 - [x] Calendar: แก้ dialog เกินหน้าจอ ให้ scroll ได้ภายใน dialog ทุก device
 - [x] Calendar: เพิ่มฟีเจอร์อัปโหลดรูปใน event (S3 + DB + UI)
+- [x] Calendar: เพิ่มปุ่ม "Add to Calendar" ข้างๆ dropdown สีใน EventFormDialog ให้ export .ics file
