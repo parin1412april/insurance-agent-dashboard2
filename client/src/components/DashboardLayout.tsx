@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Kanban, FileKey, HelpCircle, Home, LogOut, Moon, PanelLeft, Shield, Sun, User, Users, BarChart3, ExternalLink } from "lucide-react";
+import { Kanban, FileKey, HelpCircle, Home, LogOut, Moon, PanelLeft, Shield, Sun, User, Users, BarChart3, ExternalLink, Target } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,7 @@ const PREMIUM_CALC_URL = "https://finally.manus.space/";
 
 const allMenuItems: MenuItem[] = [
   { icon: Home, label: "หน้าหลัก", path: "/" },
+  { icon: Target, label: "Goal Setting", path: "/goal-setting" },
   { icon: Kanban, label: "ติดตามเคส", path: "/kanban" },
   { icon: Users, label: "ติดตามผู้มุ่งหวัง", path: "/leads" },
   { icon: FileKey, label: "ข้อมูล KeyApp", path: "/keyapp" },

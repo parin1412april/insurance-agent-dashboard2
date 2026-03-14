@@ -13,6 +13,7 @@ import QAPage from "./pages/QAPage";
 import KeyAppPage from "./pages/KeyAppPage";
 import InsuranceForm from "./pages/InsuranceForm";
 import HomePage from "./pages/HomePage";
+import GoalSetting from "./pages/GoalSetting";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
         <DashboardLayout>
           <Switch>
             <Route path="/" component={HomePage} />
+            <Route path="/goal-setting" component={GoalSetting} />
             <Route path="/kanban" component={KanbanBoard} />
             <Route path="/profile" component={ProfilePage} />
             <Route path="/leads" component={LeadsBoard} />
