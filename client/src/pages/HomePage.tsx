@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, CalendarPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, CalendarPlus, Clock, Calendar } from "lucide-react";
 import { useState, useMemo, useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -339,6 +339,125 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   );
 }
 
+// ─── Event Detail Dialog ────────────────────────────────────────────────────
+type EventDetailProps = {
+  open: boolean;
+  onClose: () => void;
+  event: CalendarEvent | null;
+  isAdmin: boolean;
+  onEdit: (ev: CalendarEvent) => void;
+  onDelete: (id: number) => void;
+};
+
+function EventDetailDialog({ open, onClose, event: ev, isAdmin, onEdit, onDelete }: EventDetailProps) {
+  if (!ev) return null;
+
+  const c = COLOR_MAP[(ev.color as EventColor) ?? "blue"];
+
+  const formatDateFull = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const thaiYear = y + 543;
+    const monthName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][m - 1];
+    const dayName = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"][new Date(y, m - 1, d).getDay()];
+    return `วัน${dayName}ที่ ${d} ${monthName} ${thaiYear}`;
+  };
+
+  const timeLabel = ev.allDay === 1
+    ? "ทั้งวัน"
+    : ev.startTime
+      ? `${ev.startTime}${ev.endTime ? ` – ${ev.endTime}` : ""} น.`
+      : null;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col max-h-[90dvh]">
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1">
+          {/* Color bar at top */}
+          <div className={`h-1.5 w-full ${c.bar}`} />
+
+          {/* Poster image */}
+          {ev.imageUrl && (
+            <img
+              src={ev.imageUrl}
+              alt={ev.title}
+              className="w-full object-cover max-h-[300px]"
+            />
+          )}
+
+          <div className="p-5 space-y-4">
+            {/* Title */}
+            <DialogHeader>
+              <DialogTitle className="text-lg leading-snug">{ev.title}</DialogTitle>
+            </DialogHeader>
+
+            {/* Date & time */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span>{formatDateFull(ev.eventDate)}</span>
+              </div>
+              {timeLabel && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>{timeLabel}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {ev.description && (
+              <p className="text-sm leading-relaxed whitespace-pre-line text-foreground">
+                {ev.description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Fixed footer with action buttons */}
+        <div className="flex items-center gap-2 px-5 py-4 border-t flex-wrap shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => downloadICS(ev)}
+          >
+            <CalendarPlus className="h-4 w-4" />
+            Add to Calendar
+          </Button>
+
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => { onClose(); onEdit(ev); }}
+              >
+                <Pencil className="h-4 w-4" />
+                แก้ไข
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => { onDelete(ev.id); onClose(); }}
+              >
+                <Trash2 className="h-4 w-4" />
+                ลบกิจกรรม
+              </Button>
+            </>
+          )}
+
+          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto">
+            ปิด
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Calendar Page ───────────────────────────────────────────────────────
 export default function HomePage() {
   const { user } = useAuth();
@@ -351,6 +470,7 @@ export default function HomePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [viewingEvent, setViewingEvent] = useState<CalendarEvent | null>(null);
 
   const utils = trpc.useUtils();
   const { data: events = [] } = trpc.calendar.list.useQuery({ year: currentYear, month: currentMonth });
@@ -398,6 +518,12 @@ export default function HomePage() {
     setShowForm(false);
     setEditingEvent(null);
     setSelectedDate(null);
+  };
+  const openDetail = (ev: CalendarEvent) => {
+    setViewingEvent(ev);
+  };
+  const closeDetail = () => {
+    setViewingEvent(null);
   };
 
   return (
@@ -492,30 +618,15 @@ export default function HomePage() {
                     return (
                       <div
                         key={ev.id}
-                        className={`flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${c.badge} group relative`}
-                        onClick={(e) => { e.stopPropagation(); }}
+                        className={`flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${c.badge} cursor-pointer hover:brightness-95 active:brightness-90 transition-all`}
+                        onClick={(e) => { e.stopPropagation(); openDetail(ev as CalendarEvent); }}
+                        title="คลิกเพื่อดูรายละเอียด"
                       >
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
                         <span className="truncate flex-1">
                           {ev.startTime && !ev.allDay ? `${ev.startTime} ` : ""}
                           {ev.title}
                         </span>
-                        {isAdmin && (
-                          <div className="hidden group-hover:flex items-center gap-0.5 ml-auto shrink-0">
-                            <button
-                              className="p-0.5 rounded hover:bg-black/10"
-                              onClick={(e) => { e.stopPropagation(); openEdit(ev); }}
-                            >
-                              <Pencil className="h-2.5 w-2.5" />
-                            </button>
-                            <button
-                              className="p-0.5 rounded hover:bg-red-100 text-red-600"
-                              onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: ev.id }); }}
-                            >
-                              <Trash2 className="h-2.5 w-2.5" />
-                            </button>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -554,6 +665,16 @@ export default function HomePage() {
           onSaved={() => {}}
         />
       )}
+
+      {/* Event detail dialog */}
+      <EventDetailDialog
+        open={!!viewingEvent}
+        onClose={closeDetail}
+        event={viewingEvent}
+        isAdmin={isAdmin}
+        onEdit={(ev) => openEdit(ev)}
+        onDelete={(id) => deleteMutation.mutate({ id })}
+      />
     </div>
   );
 }

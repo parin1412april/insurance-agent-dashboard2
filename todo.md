@@ -77,3 +77,7 @@
 - [x] Calendar: เพิ่มปุ่ม "Add to Calendar" ข้างๆ dropdown สีใน EventFormDialog ให้ export .ics file
 - [x] HomePage: เพิ่ม Timeline upcoming events ใต้ calendar เรียงจากใกล้สุดไปไกลสุด ซ่อน event ที่ผ่านไปแล้ว
 - [x] HomePage Timeline: แสดง poster รูปใหญ่เต็มๆ พร้อมรายละเอียดและปุ่ม Add to Calendar ด้านล่าง โดยไม่ต้องกดอะไรก่อน
+- [x] Calendar: คลิก event card ในตาราง → เปิด Event Detail Dialog (ดูข้อมูลกิจกรรม)
+- [x] Calendar: Event Detail Dialog สำหรับ user → แสดงข้อมูลอย่างเดียว (ชื่อ, วันที่, เวลา, หมายเหตุ, รูป) + Add to Calendar
+- [x] Calendar: Event Detail Dialog สำหรับ admin → แสดงข้อมูลเหมือน user + ปุ่มแก้ไขและลบกิจกรรม
+- [x] Calendar: ลบ hover icon (pencil/trash) ออกจาก event card ในตาราง
