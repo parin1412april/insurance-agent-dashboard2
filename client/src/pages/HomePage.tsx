@@ -541,6 +541,9 @@ export default function HomePage() {
         ))}
       </div>
 
+      {/* ── Upcoming Events Timeline ─────────────────────────────── */}
+      <UpcomingTimeline />
+
       {/* Event form dialog */}
       {showForm && (
         <EventFormDialog
@@ -551,6 +554,132 @@ export default function HomePage() {
           onSaved={() => {}}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Upcoming Events Timeline ─────────────────────────────────────────────────
+function UpcomingTimeline() {
+  const { data: events = [], isLoading } = trpc.calendar.upcoming.useQuery();
+
+  if (isLoading) {
+    return (
+      <div className="shrink-0 space-y-3">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">กิจกรรมที่กำลังจะมาถึง</h2>
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-24 rounded-xl bg-muted/50 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="shrink-0 py-6 text-center text-sm text-muted-foreground">
+        ยังไม่มีกิจกรรมที่กำลังจะมาถึง
+      </div>
+    );
+  }
+
+  // Group events by date
+  const grouped: Record<string, typeof events> = {};
+  for (const ev of events) {
+    if (!grouped[ev.eventDate]) grouped[ev.eventDate] = [];
+    grouped[ev.eventDate].push(ev);
+  }
+  const sortedDates = Object.keys(grouped).sort();
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const formatDateLabel = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const thaiYear = y + 543;
+    const monthName = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][m - 1];
+    const isToday = dateStr === todayStr;
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    const isTomorrow = dateStr === tomorrowStr;
+    const label = `${d} ${monthName} ${thaiYear}`;
+    if (isToday) return { label, badge: "วันนี้", badgeClass: "bg-primary text-primary-foreground" };
+    if (isTomorrow) return { label, badge: "พรุ่งนี้", badgeClass: "bg-amber-500 text-white" };
+    return { label, badge: null, badgeClass: "" };
+  };
+
+  return (
+    <div className="shrink-0 space-y-4 pb-4">
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">กิจกรรมที่กำลังจะมาถึง</h2>
+      <div className="relative">
+        {/* Timeline vertical line */}
+        <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-border" />
+        <div className="space-y-6">
+          {sortedDates.map((dateStr) => {
+            const { label, badge, badgeClass } = formatDateLabel(dateStr);
+            return (
+              <div key={dateStr} className="relative">
+                {/* Date node */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative z-10 h-9 w-9 rounded-full bg-background border-2 border-primary flex items-center justify-center shrink-0">
+                    <span className="text-[10px] font-bold text-primary leading-none">
+                      {dateStr.split("-")[2]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{label}</span>
+                    {badge && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badgeClass}`}>
+                        {badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Event cards */}
+                <div className="ml-12 space-y-2">
+                  {grouped[dateStr].map((ev) => {
+                    const c = COLOR_MAP[(ev.color as EventColor) ?? "blue"];
+                    return (
+                      <div
+                        key={ev.id}
+                        className={`rounded-xl border overflow-hidden shadow-sm bg-card`}
+                      >
+                        {/* Color bar */}
+                        <div className={`h-1 w-full ${c.bar}`} />
+                        <div className="p-3 flex gap-3">
+                          {/* Image */}
+                          {ev.imageUrl && (
+                            <img
+                              src={ev.imageUrl}
+                              alt={ev.title}
+                              className="h-16 w-16 rounded-lg object-cover shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-semibold text-sm leading-snug line-clamp-2">{ev.title}</p>
+                              {!ev.allDay && ev.startTime && (
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ""}
+                                </span>
+                              )}
+                              {ev.allDay === 1 && (
+                                <span className="text-xs text-muted-foreground shrink-0">ทั้งวัน</span>
+                              )}
+                            </div>
+                            {ev.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-line">
+                                {ev.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

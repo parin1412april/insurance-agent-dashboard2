@@ -655,6 +655,20 @@ const calendarRouter = router({
       await db.delete(calendarEvents).where(eq(calendarEvents.id, input.id));
       return { success: true };
     }),
+
+  // All users: list upcoming events (today and future), sorted by date asc
+  upcoming: protectedProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const rows = await db
+        .select()
+        .from(calendarEvents)
+        .where(sql`${calendarEvents.eventDate} >= ${todayStr}`)
+        .orderBy(calendarEvents.eventDate, calendarEvents.startTime);
+      return rows;
+    }),
 });
 
 // ── App router ────────────────────────────────────────────────────────────────────
