@@ -483,7 +483,7 @@ export default function GoalSetting() {
               {fmt(Math.ceil(targetFYP / remainingWeeks))} บาท
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              ≈ {fmt(Math.ceil(targetFYP / remainingWeeks / 30))} บาท / วัน
+              ≈ {fmt(Math.ceil(targetFYP / remainingWeeks * 4))} บาท / เดือน
             </div>
           </div>
         </CardContent>
