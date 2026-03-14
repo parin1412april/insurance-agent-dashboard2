@@ -92,3 +92,4 @@
 - [x] Calendar: filter (องค์กร + คอร์ส) ส่งผลต่อ Upcoming Timeline ด้วย
 - [x] Goal Setting: สร้างหน้าใหม่ GoalSetting.tsx พร้อม countdown timer, goal selector, conversion sliders, weekly activity funnel
 - [x] Goal Setting: เพิ่ม route และ sidebar navigation
+- [x] Goal Setting: เปลี่ยนชื่อ Prospects → "หาผู้มุ่งหวัง (Prospects)" และเพิ่มหน่วย คน/เคส หลังตัวเลขใน funnel cards
