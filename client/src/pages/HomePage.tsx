@@ -631,7 +631,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-full gap-4 p-4 md:p-6">
+    <div className="flex flex-col h-full gap-4 p-4 md:p-6 max-w-[960px] mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-3">
@@ -945,7 +945,7 @@ function UpcomingTimeline({ filterOrg, filterCourse }: { filterOrg: OrgTag | nul
               <img
                 src={ev.imageUrl}
                 alt={ev.title}
-                className="w-full object-cover max-h-[480px]"
+                className="w-full object-cover max-h-[360px]"
               />
             ) : (
               /* Placeholder banner with color */
