@@ -72,10 +72,10 @@ const GOALS: Goal[] = [
     textColor: "text-amber-700 dark:text-amber-400",
     requirements: [
       "Qualified MDRT & Career Agent",
-      "10% Repurchase or 10 Cases",
+      "10% Repurchase or 15 Cases",
       "12 Cases",
       "LIMRA 85%",
-      "Vitality FYP 1,964,400",
+      "Vitality FYP 450,000",
       "IC License",
     ],
   },
