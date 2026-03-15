@@ -37,7 +37,7 @@ const GOALS: Goal[] = [
     bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     borderColor: "border-emerald-400 dark:border-emerald-600",
     textColor: "text-emerald-700 dark:text-emerald-400",
-    requirements: ["Active 9/12", "9 Cases", "Top FYC 800,000", "LIMRA 80%"],
+    requirements: ["Active 9/12", "9 Cases", "Top FYC 240,000", "LIMRA 80%"],
   },
   {
     key: "VIETNAM_TRIP",
