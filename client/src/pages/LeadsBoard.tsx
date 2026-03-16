@@ -38,7 +38,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import canvasConfetti from "canvas-confetti";
 import {
-  AlertTriangle,
   CheckCircle2,
   Clock,
   GripVertical,
@@ -221,14 +220,13 @@ function LeadCard({
     }
   }, [lead.tags]);
 
-  const slaBorder = getSLABorder(lead);
-  const slaDays = getSLADays(lead.lastMovedAt);
+
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-lg border bg-card p-3 shadow-sm space-y-2 cursor-default select-none ${slaBorder} ${isDragging ? "shadow-xl rotate-2" : ""}`}
+      className={`rounded-lg border bg-card p-3 shadow-sm space-y-2 cursor-default select-none ${isDragging ? "shadow-xl rotate-2" : ""}`}
     >
       {/* Header row: drag handle + name + actions */}
       <div className="flex items-start gap-1">
@@ -294,15 +292,7 @@ function LeadCard({
         <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${truncateNotes ? "line-clamp-2" : ""}`}>{lead.notes}</p>
       )}
 
-      {/* SLA warning */}
-      {slaDays >= 3 && lead.columnStatus !== "closed_won" && lead.columnStatus !== "closed_lost" && (
-        <div
-          className={`flex items-center gap-1 text-[10px] font-medium ${slaDays >= 7 ? "text-red-600 dark:text-red-400" : "text-yellow-600 dark:text-yellow-400"}`}
-        >
-          <AlertTriangle className="h-3 w-3" />
-          {slaDays >= 7 ? `แช่อยู่ ${slaDays} วัน — ต้องติดตามด่วน!` : `แช่อยู่ ${slaDays} วัน`}
-        </div>
-      )}
+
     </div>
   );
 }
@@ -818,17 +808,7 @@ export default function LeadsBoard() {
         </div>
       </div>
 
-      {/* SLA legend */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded border-2 border-yellow-400" />
-          <span>แช่ 3–6 วัน</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded border-2 border-red-500" />
-          <span>แช่ 7+ วัน (ด่วน!)</span>
-        </div>
-      </div>
+
 
       {/* Kanban board */}
       <DndContext
