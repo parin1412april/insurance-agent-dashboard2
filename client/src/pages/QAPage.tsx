@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useFAQState } from '@/hooks/useFAQState';
 import { searchFAQEntries, filterByTags, filterByCategory, FAQ_ENTRIES, CATEGORIES, getAllTags } from '@/lib/faqData';
 import { FAQSearchBar } from '@/components/FAQSearchBar';
@@ -21,9 +21,6 @@ export default function QAPage() {
     clearFilters,
   } = useFAQState();
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Filter entries based on search and tags
   const filteredEntries = useMemo(() => {
     let result = entries;
     if (searchQuery) result = searchFAQEntries(searchQuery, result);
@@ -36,8 +33,9 @@ export default function QAPage() {
   const allTags = useMemo(() => getAllTags(), []);
 
   return (
-    <div className="flex flex-col h-full -mx-4 -mt-4">
-      {/* Sticky header */}
+    // Use -mx-4 -mt-4 to bleed to edge, but let the parent <main> handle scrolling
+    <div className="-mx-4 -mt-4">
+      {/* Sticky header — sticks relative to the scrolling <main> in DashboardLayout */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border px-4 pt-4 pb-3">
         {/* Title row */}
         <div className="flex items-center gap-3 mb-3">
@@ -56,8 +54,11 @@ export default function QAPage() {
           onClear={() => setSearchQuery('')}
         />
 
-        {/* Category filter row */}
-        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Category filter row — horizontal scroll, no bounce */}
+        <div
+          className="mt-3 flex items-center gap-2 overflow-x-auto pb-1"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           <Button
             variant={selectedCategory === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -80,7 +81,10 @@ export default function QAPage() {
         </div>
 
         {/* Tag filter row */}
-        <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div
+          className="mt-2 flex items-center gap-2 overflow-x-auto pb-1"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {allTags.map(tag => (
             <Badge
               key={tag}
@@ -113,12 +117,8 @@ export default function QAPage() {
         </div>
       </div>
 
-      {/* Scrollable content — use -webkit-overflow-scrolling for smooth iPad scroll */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-6"
-        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
-      >
+      {/* Content — no overflow here, let parent <main> scroll */}
+      <div className="px-4 py-6">
         <FAQTimeline
           entries={filteredEntries}
           onDocumentVote={handleVote}
