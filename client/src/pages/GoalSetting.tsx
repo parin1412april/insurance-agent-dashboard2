@@ -183,11 +183,12 @@ export default function GoalSetting() {
   const [loaded, setLoaded] = useState(false);
 
   // ─ Load saved settings from DB ──────────────────────────────────────────────
-  const { data: savedSettings } = trpc.goalSettings.get.useQuery();
+  const { data: savedSettings, isFetched } = trpc.goalSettings.get.useQuery();
   const saveMutation = trpc.goalSettings.save.useMutation();
 
   useEffect(() => {
-    if (savedSettings && !loaded) {
+    if (!isFetched || loaded) return; // wait for query to complete, but only run once
+    if (savedSettings) {
       setSelectedGoal((savedSettings.selectedGoal as GoalKey) ?? "MDRT");
       setCustomFYP(savedSettings.customFYP ?? 2000000);
       setCurrentFYPInput(savedSettings.currentFYPInput ?? "");
@@ -195,9 +196,10 @@ export default function GoalSetting() {
       setProspectToAppt(savedSettings.prospectToAppt ?? 50);
       setApptToPres(savedSettings.apptToPres ?? 70);
       setPresToClose(savedSettings.presToClose ?? 30);
-      setLoaded(true);
     }
-  }, [savedSettings, loaded]);
+    // Mark loaded regardless of whether savedSettings is null (first-time user)
+    setLoaded(true);
+  }, [isFetched, savedSettings, loaded]);
 
   // Auto-save with debounce whenever any value changes
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
