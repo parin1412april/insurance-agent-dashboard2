@@ -209,3 +209,77 @@ export const calendarEvents = mysqlTable("calendar_events", {
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
+/**
+ * Insured profiles – โปรไฟล์ผู้เอาประกัน (ตัวเอง / ครอบครัว / ลูกค้า)
+ */
+export const insuredProfiles = mysqlTable("insured_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  fullName: varchar("fullName", { length: 200 }).notNull(),
+  birthYear: int("birthYear"),
+  gender: mysqlEnum("gender", ["male", "female", "other"]).default("male").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InsuredProfile = typeof insuredProfiles.$inferSelect;
+export type InsertInsuredProfile = typeof insuredProfiles.$inferInsert;
+
+/**
+ * Insurance policies – กรมธรรม์ประกันภัยทั้งหมด เชื่อมกับ insuredProfile
+ */
+export const insurancePolicies = mysqlTable("insurance_policies", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  profileId: int("profileId").notNull(),
+  policyNumber: varchar("policyNumber", { length: 100 }).notNull().default(""),
+  insurerName: varchar("insurerName", { length: 200 }).notNull().default(""),
+  planName: varchar("planName", { length: 200 }).notNull().default(""),
+  policyType: mysqlEnum("policyType", [
+    "life",
+    "health",
+    "accident",
+    "critical_illness",
+    "savings",
+    "retirement",
+    "education",
+    "motor",
+    "property",
+    "other",
+  ]).default("life").notNull(),
+  sumInsured: int("sumInsured").notNull().default(0),
+  annualPremium: int("annualPremium").notNull().default(0),
+  paymentFrequency: mysqlEnum("paymentFrequency", [
+    "monthly",
+    "quarterly",
+    "semi_annual",
+    "annual",
+    "single",
+  ]).default("annual").notNull(),
+  startDateMs: int("startDateMs"),
+  endDateMs: int("endDateMs"),
+  paymentEndDateMs: int("paymentEndDateMs"),
+  policyStatus: mysqlEnum("policyStatus", [
+    "active",
+    "paid_up",
+    "lapsed",
+    "surrendered",
+    "matured",
+    "claimed",
+  ]).default("active").notNull(),
+  taxDeduction: int("taxDeduction").notNull().default(0),
+  ciCoverage: int("ciCoverage").notNull().default(0),
+  disabilityCoverage: int("disabilityCoverage").notNull().default(0),
+  additionalCoverages: text("additionalCoverages"),
+  startYear: int("startYear"),
+  paymentEndYear: int("paymentEndYear"),
+  checklistFlags: varchar("checklistFlags", { length: 500 }).notNull().default(""),
+  personalNote: text("personalNote"),
+  beneficiary: varchar("beneficiary", { length: 200 }).notNull().default(""),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InsurancePolicy = typeof insurancePolicies.$inferSelect;
+export type InsertInsurancePolicy = typeof insurancePolicies.$inferInsert;

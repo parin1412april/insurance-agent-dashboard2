@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Kanban, FileKey, HelpCircle, Home, LogOut, Moon, PanelLeft, Shield, Sun, User, Users, BarChart3, ExternalLink, Target } from "lucide-react";
+import { Kanban, FileKey, FileText, HelpCircle, Home, LogOut, Moon, PanelLeft, Shield, Sun, User, Users, BarChart3, ExternalLink, Target } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,7 @@ const allMenuItems: MenuItem[] = [
   { icon: Users, label: "ติดตามผู้มุ่งหวัง", path: "/leads" },
   { icon: FileKey, label: "ข้อมูล KeyApp", path: "/keyapp" },
   { icon: HelpCircle, label: "Q&A", path: "/qa" },
+  { icon: FileText, label: "สรุปกรมธรรม์", path: "/policy-summary" },
   { icon: Shield, label: "Admin", path: "/admin", adminOnly: true },
 ];
 

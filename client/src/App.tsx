@@ -14,6 +14,7 @@ import KeyAppPage from "./pages/KeyAppPage";
 import InsuranceForm from "./pages/InsuranceForm";
 import HomePage from "./pages/HomePage";
 import GoalSetting from "./pages/GoalSetting";
+import PolicySummaryPage from "./pages/PolicySummaryPage";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/leads" component={LeadsBoard} />
             <Route path="/keyapp" component={KeyAppPage} />
             <Route path="/qa" component={QAPage} />
+            <Route path="/policy-summary" component={PolicySummaryPage} />
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
