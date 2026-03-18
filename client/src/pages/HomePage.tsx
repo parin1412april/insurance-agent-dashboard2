@@ -22,8 +22,8 @@ import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, Calendar
 import { useState, useMemo, useRef } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type OrgTag = "AIA" | "912" | "FinAlly" | "Heartworker" | "Financiaka" | "MergeMingle";
-type CourseTag = "Products" | "ULP" | "Recruit" | "CS" | "FA" | "MDRT" | "Prestige" | "IT";
+type OrgTag = "AIA" | "912" | "FinAlly" | "Heartworker" | "Financiaka" | "MergeMingle" | "Others";
+type CourseTag = "Products" | "ULP" | "Recruit" | "CS" | "FA" | "MDRT" | "Prestige" | "IT" | "Others";
 
 type CalendarEvent = {
   id: number;
@@ -47,9 +47,10 @@ const ORG_TAGS: { value: OrgTag; label: string; color: string; dot: string; badg
   { value: "Heartworker",label: "Heartworker", color: "green",  dot: "bg-emerald-500",badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300", bar: "bg-emerald-500" },
   { value: "Financiaka", label: "Financiaka",  color: "amber",  dot: "bg-amber-500",  badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",   bar: "bg-amber-500" },
   { value: "MergeMingle",label: "MergeMingle", color: "orange", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", bar: "bg-orange-500" },
+  { value: "Others", label: "Others", color: "gray", dot: "bg-gray-500", badge: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300", bar: "bg-gray-500" },
 ];
 
-const COURSE_TAGS: CourseTag[] = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT"];
+const COURSE_TAGS: CourseTag[] = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT", "Others"];
 
 function getOrgStyle(orgTag?: string | null) {
   const org = ORG_TAGS.find(o => o.value === orgTag);

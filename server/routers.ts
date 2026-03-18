@@ -584,8 +584,8 @@ const insuranceRouter = router({
 });
 
 // ── Calendar router ──────────────────────────────────────────────────────────────
-const ORG_TAGS = ["AIA", "912", "FinAlly", "Heartworker", "Financiaka", "MergeMingle"] as const;
-const COURSE_TAGS = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT"] as const;
+const ORG_TAGS = ["AIA", "912", "FinAlly", "Heartworker", "Financiaka", "MergeMingle", "Others"] as const;
+const COURSE_TAGS = ["Products", "ULP", "Recruit", "CS", "FA", "MDRT", "Prestige", "IT", "Others"] as const;
 
 const calendarEventSchema = z.object({
   title: z.string().min(1).max(300),
