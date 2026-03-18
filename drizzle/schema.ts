@@ -209,3 +209,23 @@ export const calendarEvents = mysqlTable("calendar_events", {
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
+/**
+ * Goal settings – stores each user's Goal Setting page preferences.
+ * One row per user (upsert on save).
+ */
+export const goalSettings = mysqlTable("goal_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  selectedGoal: varchar("selectedGoal", { length: 50 }).notNull().default("MDRT"),
+  customFYP: int("customFYP").notNull().default(2000000),
+  currentFYPInput: varchar("currentFYPInput", { length: 50 }).notNull().default(""),
+  avgCaseSize: int("avgCaseSize").notNull().default(80000),
+  prospectToAppt: int("prospectToAppt").notNull().default(50),
+  apptToPres: int("apptToPres").notNull().default(70),
+  presToClose: int("presToClose").notNull().default(30),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GoalSetting = typeof goalSettings.$inferSelect;
+export type InsertGoalSetting = typeof goalSettings.$inferInsert;

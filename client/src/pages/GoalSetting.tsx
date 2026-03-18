@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
@@ -179,6 +180,45 @@ export default function GoalSetting() {
   const [prospectToAppt, setProspectToAppt] = useState(50); // %
   const [apptToPres, setApptToPres] = useState(70); // %
   const [presToClose, setPresToClose] = useState(30); // %
+  const [loaded, setLoaded] = useState(false);
+
+  // ─ Load saved settings from DB ──────────────────────────────────────────────
+  const { data: savedSettings } = trpc.goalSettings.get.useQuery();
+  const saveMutation = trpc.goalSettings.save.useMutation();
+
+  useEffect(() => {
+    if (savedSettings && !loaded) {
+      setSelectedGoal((savedSettings.selectedGoal as GoalKey) ?? "MDRT");
+      setCustomFYP(savedSettings.customFYP ?? 2000000);
+      setCurrentFYPInput(savedSettings.currentFYPInput ?? "");
+      setAvgCaseSize(savedSettings.avgCaseSize ?? 80000);
+      setProspectToAppt(savedSettings.prospectToAppt ?? 50);
+      setApptToPres(savedSettings.apptToPres ?? 70);
+      setPresToClose(savedSettings.presToClose ?? 30);
+      setLoaded(true);
+    }
+  }, [savedSettings, loaded]);
+
+  // Auto-save with debounce whenever any value changes
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!loaded) return; // don’t save before initial load
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveMutation.mutate({
+        selectedGoal,
+        customFYP,
+        currentFYPInput,
+        avgCaseSize,
+        prospectToAppt,
+        apptToPres,
+        presToClose,
+      });
+    }, 800);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [selectedGoal, customFYP, currentFYPInput, avgCaseSize, prospectToAppt, apptToPres, presToClose, loaded]);
 
   const goal = GOALS.find((g) => g.key === selectedGoal)!;
   const targetFYP = selectedGoal === "OTHERS" ? customFYP : goal.fyp;

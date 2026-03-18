@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { insuranceFormSchema } from "@shared/insurance";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import { agentProfiles, calendarEvents, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
+import { agentProfiles, calendarEvents, goalSettings, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
 import { systemRouter } from "./_core/systemRouter";
@@ -214,9 +214,49 @@ const kanbanRouter = router({
     }),
 });
 
-// ── Admin router ─────────────────────────────────────────────────────
-const adminRouter = router({
-  // Get all cards from all users (with user info)
+// ── Goal Settings Router ──────────────────────────────────────────────────
+const goalSettingsRouter = router({
+  get: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return null;
+    const rows = await db.select().from(goalSettings).where(eq(goalSettings.userId, ctx.user.id)).limit(1);
+    return rows[0] ?? null;
+  }),
+  save: protectedProcedure
+    .input(
+      z.object({
+        selectedGoal: z.string(),
+        customFYP: z.number(),
+        currentFYPInput: z.string(),
+        avgCaseSize: z.number(),
+        prospectToAppt: z.number(),
+        apptToPres: z.number(),
+        presToClose: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db
+        .insert(goalSettings)
+        .values({ userId: ctx.user.id, ...input })
+        .onDuplicateKeyUpdate({
+          set: {
+            selectedGoal: input.selectedGoal,
+            customFYP: input.customFYP,
+            currentFYPInput: input.currentFYPInput,
+            avgCaseSize: input.avgCaseSize,
+            prospectToAppt: input.prospectToAppt,
+            apptToPres: input.apptToPres,
+            presToClose: input.presToClose,
+          },
+        });
+      return { success: true };
+    }),
+});
+
+// ── Admin Router (inline) ──────────────────────────────────────────────────
+const adminRouter2 = router({ // Get all cards from all users (with user info)
   allCards: adminProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
@@ -715,10 +755,11 @@ export const appRouter = router({
   }),
   profile: profileRouter,
   kanban: kanbanRouter,
-  admin: adminRouter,
+  admin: adminRouter2,
   leads: leadsRouter,
   insurance: insuranceRouter,
   calendar: calendarRouter,
+  goalSettings: goalSettingsRouter,
 });
 
 export type AppRouter = typeof appRouter;
