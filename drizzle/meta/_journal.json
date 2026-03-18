@@ -78,6 +78,20 @@
       "when": 1773475302521,
       "tag": "0010_supreme_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1773826134319,
+      "tag": "0011_gifted_norman_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1773855571935,
+      "tag": "0012_tough_silverclaw",
+      "breakpoints": true
     }
   ]
 }

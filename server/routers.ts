@@ -238,6 +238,26 @@ const adminRouter = router({
     return rows;
   }),
 
+  // Get all leads from all users (with user info)
+  allLeads: adminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    const rows = await db
+      .select({
+        lead: leads,
+        userName: users.name,
+        userEmail: users.email,
+        profileNickname: agentProfiles.nickname,
+        profileFirstName: agentProfiles.firstName,
+        profileLastName: agentProfiles.lastName,
+        profileAgentCode: agentProfiles.agentCode,
+      })
+      .from(leads)
+      .leftJoin(users, eq(leads.userId, users.id))
+      .leftJoin(agentProfiles, eq(leads.userId, agentProfiles.userId))
+      .orderBy(leads.updatedAt);
+    return rows;
+  }),
   // List all users
   allUsers: adminProcedure.query(async () => {
     const db = await getDb();

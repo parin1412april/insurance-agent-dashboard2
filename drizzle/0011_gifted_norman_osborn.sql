@@ -1,0 +1,41 @@
+CREATE TABLE `insurance_policies` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`profileId` int NOT NULL,
+	`policyNumber` varchar(100) NOT NULL DEFAULT '',
+	`insurerName` varchar(200) NOT NULL DEFAULT '',
+	`planName` varchar(200) NOT NULL DEFAULT '',
+	`policyType` enum('life','health','accident','critical_illness','savings','retirement','education','motor','property','other') NOT NULL DEFAULT 'life',
+	`sumInsured` int NOT NULL DEFAULT 0,
+	`annualPremium` int NOT NULL DEFAULT 0,
+	`paymentFrequency` enum('monthly','quarterly','semi_annual','annual','single') NOT NULL DEFAULT 'annual',
+	`startDateMs` int,
+	`endDateMs` int,
+	`paymentEndDateMs` int,
+	`policyStatus` enum('active','paid_up','lapsed','surrendered','matured','claimed') NOT NULL DEFAULT 'active',
+	`taxDeduction` int NOT NULL DEFAULT 0,
+	`ciCoverage` int NOT NULL DEFAULT 0,
+	`disabilityCoverage` int NOT NULL DEFAULT 0,
+	`additionalCoverages` text,
+	`startYear` int,
+	`paymentEndYear` int,
+	`checklistFlags` varchar(500) NOT NULL DEFAULT '',
+	`personalNote` text,
+	`beneficiary` varchar(200) NOT NULL DEFAULT '',
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `insurance_policies_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `insured_profiles` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`fullName` varchar(200) NOT NULL,
+	`birthYear` int,
+	`gender` enum('male','female','other') NOT NULL DEFAULT 'male',
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `insured_profiles_id` PRIMARY KEY(`id`)
+);
