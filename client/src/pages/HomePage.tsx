@@ -946,7 +946,7 @@ function UpcomingTimeline({ filterOrg, filterCourse }: { filterOrg: OrgTag | nul
               <img
                 src={ev.imageUrl}
                 alt={ev.title}
-                className="w-full object-cover max-h-[360px]"
+                className="w-full object-contain"
               />
             ) : (
               /* Placeholder banner with color */
