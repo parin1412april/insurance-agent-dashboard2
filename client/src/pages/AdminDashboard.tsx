@@ -776,7 +776,7 @@ function AdminLeadsView() {
                         </div>
                       )}
                       {row.lead.notes && (
-                        <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-2">{row.lead.notes}</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{row.lead.notes}</p>
                       )}
                       <div className="pt-1.5 border-t border-border/50">
                         <p className="text-[10px] font-medium text-muted-foreground">ตัวแทน: {agentName}{row.profileAgentCode ? ` (${row.profileAgentCode})` : ""}</p>
