@@ -72,7 +72,7 @@ function getOrgStyle(orgTag?: string | null) {
   return org ?? { dot: "bg-blue-500", badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300", bar: "bg-blue-500", color: "blue" };
 }
 
-type EventColor = "blue" | "red" | "green" | "orange" | "purple" | "amber";
+type EventColor = "blue" | "red" | "green" | "orange" | "purple" | "amber" | "gray";
 
 const COLOR_MAP: Record<EventColor, { dot: string; badge: string; bar: string }> = {
   blue:   { dot: "bg-blue-500",   badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",   bar: "bg-blue-500" },
@@ -81,6 +81,7 @@ const COLOR_MAP: Record<EventColor, { dot: string; badge: string; bar: string }>
   orange: { dot: "bg-orange-500", badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", bar: "bg-orange-500" },
   purple: { dot: "bg-purple-500", badge: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300", bar: "bg-purple-500" },
   amber:  { dot: "bg-amber-500",  badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", bar: "bg-amber-500" },
+  gray:   { dot: "bg-gray-500",   badge: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-300",   bar: "bg-gray-500" },
 };
 
 const THAI_MONTHS = [

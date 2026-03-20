@@ -653,7 +653,7 @@ const calendarEventSchema = z.object({
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-  color: z.enum(["blue", "red", "green", "orange", "purple", "amber"]).default("blue"),
+  color: z.enum(["blue", "red", "green", "orange", "purple", "amber", "gray"]).default("blue"),
   allDay: z.number().int().min(0).max(1).default(0),
   imageUrl: z.string().url().optional(),
   orgTag: z.enum(ORG_TAGS).optional(),
