@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { insuranceFormSchema } from "@shared/insurance";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import { agentProfiles, calendarEvents, goalSettings, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
+import { agentProfiles, calendarEvents, eventImages, goalSettings, kanbanCards, leads, users, whitelistEmails } from "../drizzle/schema";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { notifyOwner } from "./_core/notification";
 import { systemRouter } from "./_core/systemRouter";
@@ -706,7 +706,7 @@ const calendarRouter = router({
       return { success: true };
     }),
 
-  // All users: upload event image
+  // All users: upload event image (single, legacy)
   uploadImage: protectedProcedure
     .input(z.object({ base64: z.string(), mimeType: z.string() }))
     .mutation(async ({ input }) => {
@@ -715,6 +715,69 @@ const calendarRouter = router({
       const key = `calendar-images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { url } = await storagePut(key, buffer, input.mimeType);
       return { url };
+    }),
+  // Multi-image: upload one image and attach to event
+  addImage: protectedProcedure
+    .input(z.object({ eventId: z.number().int(), base64: z.string(), mimeType: z.string(), sortOrder: z.number().int().default(0) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const buffer = Buffer.from(input.base64, "base64");
+      const ext = input.mimeType.split("/")[1] ?? "jpg";
+      const key = `calendar-images/${input.eventId}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      const [result] = await db.insert(eventImages).values({
+        eventId: input.eventId,
+        url,
+        sortOrder: input.sortOrder,
+      });
+      return { id: (result as any).insertId as number, url };
+    }),
+  // Multi-image: list images for an event
+  listImages: protectedProcedure
+    .input(z.object({ eventId: z.number().int() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(eventImages)
+        .where(eq(eventImages.eventId, input.eventId))
+        .orderBy(eventImages.sortOrder, eventImages.createdAt);
+    }),
+  // Multi-image: delete one image
+  deleteImage: protectedProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(eventImages).where(eq(eventImages.id, input.id));
+      return { success: true };
+    }),
+  // Multi-image: reorder images
+  reorderImages: protectedProcedure
+    .input(z.object({ eventId: z.number().int(), orderedIds: z.array(z.number().int()) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await Promise.all(
+        input.orderedIds.map((id, idx) =>
+          db.update(eventImages).set({ sortOrder: idx }).where(eq(eventImages.id, id))
+        )
+      );
+      return { success: true };
+    }),
+  // Multi-image: list images for multiple events (batch, for upcoming list)
+  listImagesForEvents: protectedProcedure
+    .input(z.object({ eventIds: z.array(z.number().int()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.eventIds.length === 0) return [];
+      return db
+        .select()
+        .from(eventImages)
+        .where(sql`${eventImages.eventId} IN (${sql.join(input.eventIds.map(id => sql`${id}`), sql`, `)})`)
+        .orderBy(eventImages.sortOrder, eventImages.createdAt);
     }),
 
   // All users: delete event

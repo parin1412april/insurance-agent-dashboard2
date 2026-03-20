@@ -229,3 +229,17 @@ export const goalSettings = mysqlTable("goal_settings", {
 
 export type GoalSetting = typeof goalSettings.$inferSelect;
 export type InsertGoalSetting = typeof goalSettings.$inferInsert;
+
+/**
+ * Event images – multiple images per calendar event.
+ * Replaces the single imageUrl on calendarEvents for multi-image support.
+ */
+export const eventImages = mysqlTable("event_images", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: int("eventId").notNull(), // FK → calendarEvents.id
+  url: varchar("url", { length: 1000 }).notNull(), // S3 URL
+  sortOrder: int("sortOrder").notNull().default(0), // display order
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EventImage = typeof eventImages.$inferSelect;
+export type InsertEventImage = typeof eventImages.$inferInsert;

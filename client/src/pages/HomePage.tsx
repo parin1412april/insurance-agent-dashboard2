@@ -18,8 +18,21 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, ImagePlus, X, CalendarPlus, Clock, Calendar } from "lucide-react";
-import { useState, useMemo, useRef } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Pencil,
+  Trash2,
+  ImagePlus,
+  X,
+  CalendarPlus,
+  Clock,
+  Calendar,
+  Images,
+  ZoomIn,
+} from "lucide-react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type OrgTag = "AIA" | "912" | "FinAlly" | "Heartworker" | "Financiaka" | "MergeMingle" | "Others";
@@ -39,6 +52,8 @@ type CalendarEvent = {
   courseTag?: string | null;
   createdBy: number;
 };
+
+type EventImage = { id: number; url: string; sortOrder: number };
 
 const ORG_TAGS: { value: OrgTag; label: string; color: string; dot: string; badge: string; bar: string }[] = [
   { value: "AIA",        label: "AIA",         color: "red",    dot: "bg-red-500",     badge: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",         bar: "bg-red-500" },
@@ -85,6 +100,110 @@ function toDateStr(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+// ─── Image Lightbox ───────────────────────────────────────────────────────────
+type LightboxProps = {
+  images: { url: string }[];
+  initialIndex?: number;
+  onClose: () => void;
+};
+
+function ImageLightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
+  const [idx, setIdx] = useState(initialIndex);
+  const touchStartX = useRef<number | null>(null);
+
+  const prev = useCallback(() => setIdx(i => (i - 1 + images.length) % images.length), [images.length]);
+  const next = useCallback(() => setIdx(i => (i + 1) % images.length), [images.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose, prev, next]);
+
+  if (images.length === 0) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center"
+      onClick={onClose}
+      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX.current;
+        if (dx > 50) prev();
+        else if (dx < -50) next();
+        touchStartX.current = null;
+      }}
+    >
+      {/* Close */}
+      <button
+        className="absolute top-4 right-4 text-white/80 hover:text-white z-10 p-3 rounded-full bg-black/50 touch-manipulation"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+      >
+        <X className="h-6 w-6" />
+      </button>
+
+      {/* Counter */}
+      {images.length > 1 && (
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 text-white/80 text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+          {idx + 1} / {images.length}
+        </div>
+      )}
+
+      {/* Image */}
+      <img
+        src={images[idx].url}
+        alt={`รูปที่ ${idx + 1}`}
+        className="max-w-full max-h-[85dvh] object-contain select-none"
+        onClick={(e) => e.stopPropagation()}
+        draggable={false}
+      />
+
+      {/* Prev/Next arrows — desktop only, use swipe on touch */}
+      {images.length > 1 && (
+        <>
+          <button
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-black/50 hidden md:flex touch-manipulation"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-black/50 hidden md:flex touch-manipulation"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </>
+      )}
+
+      {/* Dot indicators */}
+      {images.length > 1 && (
+        <div className="absolute bottom-6 flex gap-2.5">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              className={`h-2.5 rounded-full transition-all touch-manipulation ${
+                i === idx ? "w-7 bg-white" : "w-2.5 bg-white/40"
+              }`}
+              onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Swipe hint — mobile only */}
+      {images.length > 1 && (
+        <p className="absolute bottom-14 text-white/40 text-xs md:hidden">ปัดซ้าย-ขวาเพื่อดูรูปถัดไป</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Event Form Dialog ────────────────────────────────────────────────────────
 type EventFormProps = {
   open: boolean;
@@ -104,9 +223,23 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   const [color, setColor] = useState<EventColor>((event?.color as EventColor) ?? "blue");
   const [allDay, setAllDay] = useState(event?.allDay === 1);
   const [imageUrl, setImageUrl] = useState<string | null>(event?.imageUrl ?? null);
-  const [imagePreview, setImagePreview] = useState<string | null>(event?.imageUrl ?? null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [orgTag, setOrgTag] = useState<OrgTag | "">(event?.orgTag as OrgTag ?? "");
+
+  // Multi-image state
+  type PendingImg = { localUrl: string; base64: string; mimeType: string };
+  const [pendingImgs, setPendingImgs] = useState<PendingImg[]>([]);
+  const [savedImgs, setSavedImgs] = useState<EventImage[]>([]);
+  const [uploadingCount, setUploadingCount] = useState(0);
+
+  // Load existing images when editing
+  const { data: existingImages } = trpc.calendar.listImages.useQuery(
+    { eventId: event?.id ?? 0 },
+    { enabled: !!event?.id }
+  );
+  useEffect(() => {
+    if (existingImages) setSavedImgs(existingImages as EventImage[]);
+  }, [existingImages]);
+
   // Parse existing courseTag JSON array or empty array
   const [courseTags, setCourseTags] = useState<CourseTag[]>(() => {
     if (!event?.courseTag) return [];
@@ -117,49 +250,104 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
       prev.includes(ct) ? prev.filter(t => t !== ct) : [...prev, ct]
     );
   };
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadImageMutation = trpc.calendar.uploadImage.useMutation({
-    onSuccess: (data) => {
-      setImageUrl(data.url);
-      setUploadingImage(false);
-    },
-    onError: () => setUploadingImage(false),
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const addImageMutation = trpc.calendar.addImage.useMutation();
+  const deleteImageMutation = trpc.calendar.deleteImage.useMutation();
 
   const createMutation = trpc.calendar.create.useMutation({
-    onSuccess: () => { utils.calendar.list.invalidate(); onSaved(); onClose(); },
+    onSuccess: async (data) => {
+      const eventId = (data as any).id as number;
+      // Upload all pending images after event is created
+      if (pendingImgs.length > 0) {
+        await Promise.all(
+          pendingImgs.map((img, i) =>
+            addImageMutation.mutateAsync({ eventId, base64: img.base64, mimeType: img.mimeType, sortOrder: i })
+          )
+        );
+      }
+      utils.calendar.list.invalidate();
+      utils.calendar.upcoming.invalidate();
+      onSaved();
+      onClose();
+    },
   });
+
   const updateMutation = trpc.calendar.update.useMutation({
-    onSuccess: () => { utils.calendar.list.invalidate(); onSaved(); onClose(); },
+    onSuccess: () => {
+      utils.calendar.list.invalidate();
+      utils.calendar.upcoming.invalidate();
+      utils.calendar.listImages.invalidate({ eventId: event?.id ?? 0 });
+      onSaved();
+      onClose();
+    },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Preview
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImagePreview(dataUrl);
-      // Upload: strip data URL prefix
+  const handleFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    for (const file of files) {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.readAsDataURL(file);
+      });
       const base64 = dataUrl.split(",")[1];
-      setUploadingImage(true);
-      uploadImageMutation.mutate({ base64, mimeType: file.type });
-    };
-    reader.readAsDataURL(file);
+
+      if (event?.id) {
+        // Edit mode: upload immediately
+        setUploadingCount(c => c + 1);
+        try {
+          const result = await addImageMutation.mutateAsync({
+            eventId: event.id,
+            base64,
+            mimeType: file.type,
+            sortOrder: savedImgs.length,
+          });
+          setSavedImgs(prev => [...prev, { id: result.id, url: result.url, sortOrder: prev.length }]);
+          if (!imageUrl) setImageUrl(result.url);
+        } finally {
+          setUploadingCount(c => c - 1);
+        }
+      } else {
+        // Create mode: queue for later
+        setPendingImgs(prev => [...prev, { localUrl: dataUrl, base64, mimeType: file.type }]);
+        if (!imageUrl) setImageUrl(dataUrl);
+      }
+    }
   };
 
-  const handleRemoveImage = () => {
-    setImageUrl(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleRemoveSaved = async (id: number) => {
+    await deleteImageMutation.mutateAsync({ id });
+    setSavedImgs(prev => {
+      const next = prev.filter(img => img.id !== id);
+      if (next.length > 0) setImageUrl(next[0].url);
+      else setImageUrl(null);
+      return next;
+    });
   };
+
+  const handleRemovePending = (idx: number) => {
+    setPendingImgs(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      if (next.length > 0) setImageUrl(next[0].localUrl);
+      else setImageUrl(null);
+      return next;
+    });
+  };
+
+  const allPreviewImages = event?.id
+    ? savedImgs.map(img => ({ url: img.url }))
+    : pendingImgs.map(p => ({ url: p.localUrl }));
 
   const handleSubmit = () => {
     if (!title.trim() || !eventDate) return;
-    // Derive color from orgTag automatically
     const derivedColor = orgTag ? (getOrgStyle(orgTag).color as EventColor) : color;
+    const firstImageUrl = event?.id
+      ? (savedImgs[0]?.url ?? imageUrl ?? undefined)
+      : undefined; // will be set after create via addImage
     const payload = {
       title: title.trim(),
       description: description || undefined,
@@ -168,7 +356,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
       endTime: allDay ? undefined : (endTime || undefined),
       color: derivedColor,
       allDay: allDay ? 1 : 0,
-      imageUrl: imageUrl ?? undefined,
+      imageUrl: firstImageUrl,
       orgTag: orgTag || undefined,
       courseTags: courseTags.length > 0 ? courseTags : undefined,
     };
@@ -179,7 +367,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
     }
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending || uploadingCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -282,26 +470,26 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
             )}
           </div>
 
-          {/* Color (only shown when no orgTag) + Add to Calendar */}
+          {/* Color (only shown when no orgTag) */}
           <div className="grid gap-1.5">
             {!orgTag && <Label>สี</Label>}
             <div className="flex items-center gap-2">
               {!orgTag && (
-              <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(COLOR_MAP) as EventColor[]).map((c) => (
-                    <SelectItem key={c} value={c}>
-                      <div className="flex items-center gap-2">
-                        <span className={`h-3 w-3 rounded-full ${COLOR_MAP[c].dot}`} />
-                        <span className="capitalize">{c}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={color} onValueChange={(v) => setColor(v as EventColor)}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(COLOR_MAP) as EventColor[]).map((c) => (
+                      <SelectItem key={c} value={c}>
+                        <div className="flex items-center gap-2">
+                          <span className={`h-3 w-3 rounded-full ${COLOR_MAP[c].dot}`} />
+                          <span className="capitalize">{c}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
               <Button
                 type="button"
@@ -310,7 +498,6 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
                 className="shrink-0 gap-1.5 text-xs"
                 disabled={!title.trim() || !eventDate}
                 onClick={() => {
-                  // Build .ics content
                   const dtDate = eventDate.replace(/-/g, "");
                   let dtStart: string;
                   let dtEnd: string;
@@ -335,7 +522,6 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
                     dtEnd,
                     `SUMMARY:${title.trim()}`,
                     desc ? `DESCRIPTION:${desc}` : "",
-                    imageUrl ? `ATTACH:${imageUrl}` : "",
                     "END:VEVENT",
                     "END:VCALENDAR",
                   ].filter(Boolean).join("\r\n");
@@ -367,46 +553,86 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
             />
           </div>
 
-          {/* Image upload */}
-          <div className="grid gap-1.5">
-            <Label>รูปภาพ Event</Label>
-            {imagePreview ? (
-              <div className="relative rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={imagePreview}
-                  alt="event preview"
-                  className="w-full max-h-48 object-cover"
-                />
+          {/* Multi-image upload */}
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5">
+                <Images className="h-4 w-4" />
+                รูปภาพ Event
+                <span className="text-xs text-muted-foreground font-normal">(เพิ่มได้หลายรูป)</span>
+              </Label>
+              {allPreviewImages.length > 0 && (
                 <button
                   type="button"
-                  onClick={handleRemoveImage}
-                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
-                  <X className="h-4 w-4" />
+                  <Plus className="h-3 w-3" />
+                  เพิ่มรูป
                 </button>
-                {uploadingImage && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-white text-sm">กำลังอัปโหลด...</span>
+              )}
+            </div>
+
+            {/* Image grid preview */}
+            {allPreviewImages.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {allPreviewImages.map((img, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border bg-muted group">
+                    <img
+                      src={img.url}
+                      alt={`รูปที่ ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (event?.id) handleRemoveSaved(savedImgs[i]?.id);
+                        else handleRemovePending(i);
+                      }}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                    {i === 0 && (
+                      <span className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                        หลัก
+                      </span>
+                    )}
                   </div>
-                )}
+                ))}
+                {/* Add more button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  <ImagePlus className="h-5 w-5" />
+                  <span className="text-[10px]">เพิ่ม</span>
+                </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer min-h-[100px]"
               >
-                <ImagePlus className="h-6 w-6" />
-                <span className="text-sm">คลิกเพื่อเลือกรูปภาพ</span>
-                <span className="text-xs">JPG, PNG, WEBP (สูงสุด 5MB)</span>
+                <ImagePlus className="h-7 w-7" />
+                <span className="text-sm font-medium">แตะเพื่อเลือกรูปภาพ</span>
+                <span className="text-xs">JPG, PNG, WEBP · เลือกได้หลายรูปพร้อมกัน</span>
               </button>
             )}
+
+            {uploadingCount > 0 && (
+              <p className="text-xs text-muted-foreground animate-pulse">กำลังอัปโหลด {uploadingCount} รูป...</p>
+            )}
+
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
               className="hidden"
-              onChange={handleImageChange}
+              onChange={handleFilesChange}
             />
           </div>
         </div>
@@ -416,7 +642,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
           <Button variant="outline" onClick={onClose} disabled={isPending}>ยกเลิก</Button>
           <Button
             onClick={handleSubmit}
-            disabled={isPending || !title.trim() || !eventDate || uploadingImage}
+            disabled={isPending || !title.trim() || !eventDate}
           >
             {isPending ? "กำลังบันทึก..." : event ? "บันทึก" : "เพิ่ม Event"}
           </Button>
@@ -437,6 +663,26 @@ type EventDetailProps = {
 };
 
 function EventDetailDialog({ open, onClose, event: ev, isAdmin, onEdit, onDelete }: EventDetailProps) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [galleryIdx, setGalleryIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  // Load multi-images
+  const { data: eventImages = [] } = trpc.calendar.listImages.useQuery(
+    { eventId: ev?.id ?? 0 },
+    { enabled: !!ev?.id && open }
+  );
+
+  // Build display images: prefer eventImages, fallback to legacy imageUrl
+  const displayImages: { url: string }[] = useMemo(() => {
+    if (eventImages.length > 0) return eventImages.map(img => ({ url: img.url }));
+    if (ev?.imageUrl) return [{ url: ev.imageUrl }];
+    return [];
+  }, [eventImages, ev?.imageUrl]);
+
+  // Reset gallery index when event changes
+  useEffect(() => { setGalleryIdx(0); }, [ev?.id]);
+
   if (!ev) return null;
 
   const c = COLOR_MAP[(ev.color as EventColor) ?? "blue"];
@@ -455,93 +701,187 @@ function EventDetailDialog({ open, onClose, event: ev, isAdmin, onEdit, onDelete
       ? `${ev.startTime}${ev.endTime ? ` – ${ev.endTime}` : ""} น.`
       : null;
 
+  const prevImg = () => setGalleryIdx(i => (i - 1 + displayImages.length) % displayImages.length);
+  const nextImg = () => setGalleryIdx(i => (i + 1) % displayImages.length);
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col max-h-[90dvh]">
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1">
-          {/* Color bar at top */}
-          <div className={`h-1.5 w-full ${c.bar}`} />
+    <>
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col max-h-[90dvh]">
+          {/* Scrollable body */}
+          <div className="overflow-y-auto flex-1">
+            {/* Color bar at top */}
+            <div className={`h-1.5 w-full ${c.bar}`} />
 
-          {/* Poster image */}
-          {ev.imageUrl && (
-            <img
-              src={ev.imageUrl}
-              alt={ev.title}
-              className="w-full object-cover max-h-[300px]"
-            />
-          )}
+            {/* Image gallery */}
+            {displayImages.length > 0 && (
+              <div
+                className="relative w-full bg-black select-none"
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={(e) => {
+                  if (touchStartX.current === null) return;
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (dx > 40 && displayImages.length > 1) prevImg();
+                  else if (dx < -40 && displayImages.length > 1) nextImg();
+                  touchStartX.current = null;
+                }}
+              >
+                <img
+                  src={displayImages[galleryIdx].url}
+                  alt={ev.title}
+                  className="w-full object-contain max-h-[60dvh] cursor-zoom-in"
+                  onClick={() => setLightboxIndex(galleryIdx)}
+                  draggable={false}
+                />
 
-          <div className="p-5 space-y-4">
-            {/* Title */}
-            <DialogHeader>
-              <DialogTitle className="text-lg leading-snug">{ev.title}</DialogTitle>
-            </DialogHeader>
+                {/* Fullscreen hint */}
+                <button
+                  className="absolute top-2 right-2 bg-black/50 text-white/80 hover:text-white p-2 rounded-full"
+                  onClick={() => setLightboxIndex(galleryIdx)}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
 
-            {/* Date & time */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4 shrink-0" />
-                <span>{formatDateFull(ev.eventDate)}</span>
+                {/* Prev/Next arrows — desktop */}
+                {displayImages.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white/80 hover:text-white p-2 rounded-full hidden md:flex"
+                      onClick={prevImg}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white/80 hover:text-white p-2 rounded-full hidden md:flex"
+                      onClick={nextImg}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
+
+                {/* Dot indicators */}
+                {displayImages.length > 1 && (
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {displayImages.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all ${
+                          i === galleryIdx ? "w-5 bg-white" : "w-1.5 bg-white/50"
+                        }`}
+                        onClick={() => setGalleryIdx(i)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Image counter badge */}
+                {displayImages.length > 1 && (
+                  <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Images className="h-3 w-3" />
+                    {galleryIdx + 1}/{displayImages.length}
+                  </div>
+                )}
               </div>
-              {timeLabel && (
+            )}
+
+            {/* Thumbnail strip — when 2+ images */}
+            {displayImages.length > 1 && (
+              <div className="flex gap-1.5 px-3 pt-2 overflow-x-auto">
+                {displayImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setGalleryIdx(i)}
+                    className={`shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 transition-all ${
+                      i === galleryIdx ? "border-primary" : "border-transparent opacity-60"
+                    }`}
+                  >
+                    <img src={img.url} alt={`thumb ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="p-5 space-y-4">
+              {/* Title */}
+              <DialogHeader>
+                <DialogTitle className="text-lg leading-snug">{ev.title}</DialogTitle>
+              </DialogHeader>
+
+              {/* Date & time */}
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 shrink-0" />
-                  <span>{timeLabel}</span>
+                  <Calendar className="h-4 w-4 shrink-0" />
+                  <span>{formatDateFull(ev.eventDate)}</span>
                 </div>
+                {timeLabel && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>{timeLabel}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              {ev.description && (
+                <p className="text-sm leading-relaxed whitespace-pre-line text-foreground">
+                  {ev.description}
+                </p>
               )}
             </div>
-
-            {/* Description */}
-            {ev.description && (
-              <p className="text-sm leading-relaxed whitespace-pre-line text-foreground">
-                {ev.description}
-              </p>
-            )}
           </div>
-        </div>
 
-        {/* Fixed footer with action buttons */}
-        <div className="flex items-center gap-2 px-5 py-4 border-t flex-wrap shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => downloadICS(ev)}
-          >
-            <CalendarPlus className="h-4 w-4" />
-            Add to Calendar
-          </Button>
+          {/* Fixed footer with action buttons */}
+          <div className="flex items-center gap-2 px-5 py-4 border-t flex-wrap shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => downloadICS(ev)}
+            >
+              <CalendarPlus className="h-4 w-4" />
+              Add to Calendar
+            </Button>
 
-          {isAdmin && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => { onClose(); onEdit(ev); }}
-              >
-                <Pencil className="h-4 w-4" />
-                แก้ไข
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => { onDelete(ev.id); onClose(); }}
-              >
-                <Trash2 className="h-4 w-4" />
-                ลบกิจกรรม
-              </Button>
-            </>
-          )}
+            {isAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => { onClose(); onEdit(ev); }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  แก้ไข
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => { onDelete(ev.id); onClose(); }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  ลบกิจกรรม
+                </Button>
+              </>
+            )}
 
-          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto">
-            ปิด
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto">
+              ปิด
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lightbox fullscreen */}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={displayImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -941,15 +1281,15 @@ function UpcomingTimeline({ filterOrg, filterCourse }: { filterOrg: OrgTag | nul
 
         return (
           <div key={ev.id} className="rounded-2xl overflow-hidden border shadow-sm bg-card">
-            {/* Poster image — full width */}
+            {/* Poster image — full width, no crop */}
             {ev.imageUrl ? (
               <img
                 src={ev.imageUrl}
                 alt={ev.title}
                 className="w-full object-contain"
+                loading="lazy"
               />
             ) : (
-              /* Placeholder banner with color */
               <div className={`w-full h-32 flex items-center justify-center ${c.bar} opacity-20`} />
             )}
 
