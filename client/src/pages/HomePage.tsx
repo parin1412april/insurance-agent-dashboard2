@@ -252,6 +252,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const addImageMutation = trpc.calendar.addImage.useMutation();
   const deleteImageMutation = trpc.calendar.deleteImage.useMutation();
 
@@ -343,7 +344,9 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
     : pendingImgs.map(p => ({ url: p.localUrl }));
 
   const handleSubmit = () => {
-    if (!title.trim() || !eventDate) return;
+    // Always read date from DOM ref directly to handle Safari/iPad onChange quirks
+    const resolvedDate = dateInputRef.current?.value || eventDate;
+    if (!title.trim() || !resolvedDate) return;
     const derivedColor = orgTag ? (getOrgStyle(orgTag).color as EventColor) : color;
     const firstImageUrl = event?.id
       ? (savedImgs[0]?.url ?? imageUrl ?? undefined)
@@ -351,7 +354,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
     const payload = {
       title: title.trim(),
       description: description || undefined,
-      eventDate,
+      eventDate: resolvedDate,
       startTime: allDay ? undefined : (startTime || undefined),
       endTime: allDay ? undefined : (endTime || undefined),
       color: derivedColor,
@@ -393,11 +396,13 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
           {/* Date */}
           <div className="grid gap-1.5">
             <Label htmlFor="ev-date">วันที่ *</Label>
-            <Input
+            <input
               id="ev-date"
+              ref={dateInputRef}
               type="date"
-              value={eventDate}
+              defaultValue={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -642,7 +647,7 @@ function EventFormDialog({ open, onClose, initialDate, event, onSaved }: EventFo
           <Button variant="outline" onClick={onClose} disabled={isPending}>ยกเลิก</Button>
           <Button
             onClick={handleSubmit}
-            disabled={isPending || !title.trim() || !eventDate}
+            disabled={isPending || !title.trim()}
           >
             {isPending ? "กำลังบันทึก..." : event ? "บันทึก" : "เพิ่ม Event"}
           </Button>
