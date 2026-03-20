@@ -801,7 +801,30 @@ const calendarRouter = router({
         .from(calendarEvents)
         .where(sql`${calendarEvents.eventDate} >= ${todayStr}`)
         .orderBy(calendarEvents.eventDate, calendarEvents.startTime);
-      return rows;
+
+      // For each event, fetch the first image from event_images table (sortOrder ASC)
+      // and use it as imageUrl if the event's own imageUrl is null
+      if (rows.length === 0) return rows;
+      const eventIds = rows.map(r => r.id);
+      const firstImages = await db
+        .select()
+        .from(eventImages)
+        .where(sql`${eventImages.eventId} IN (${sql.join(eventIds.map(id => sql`${id}`), sql`, `)})`)
+        .orderBy(eventImages.sortOrder, eventImages.createdAt);
+
+      // Build a map: eventId -> first image url
+      const firstImageMap = new Map<number, string>();
+      for (const img of firstImages) {
+        if (!firstImageMap.has(img.eventId)) {
+          firstImageMap.set(img.eventId, img.url);
+        }
+      }
+
+      // Merge: prefer event_images first image, fallback to legacy imageUrl
+      return rows.map(r => ({
+        ...r,
+        imageUrl: firstImageMap.get(r.id) ?? r.imageUrl,
+      }));
     }),
 });
 
