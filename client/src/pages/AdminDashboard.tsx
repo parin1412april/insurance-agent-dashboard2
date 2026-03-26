@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -29,6 +30,7 @@ import {
   FileEdit,
   Filter,
   Loader2,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -37,6 +39,7 @@ import {
   ShieldOff,
   ShieldPlus,
   ThumbsDown,
+  Trash2,
   TrendingUp,
   UserPlus,
   Users,
@@ -90,9 +93,32 @@ const COLUMN_CONFIG: Record<
 // ── Admin Cards View ─────────────────────────────────────────────────
 function AdminCardsView() {
   const allCardsQuery = trpc.admin.allCards.useQuery();
+  const utils = trpc.useUtils();
   const [search, setSearch] = useState("");
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  // Edit/Delete state
+  const [editCard, setEditCard] = useState<{ id: number; policyNumber: string; description: string; columnStatus: string } | null>(null);
+  const [deleteCardId, setDeleteCardId] = useState<number | null>(null);
+
+  const updateCardMutation = trpc.admin.updateCard.useMutation({
+    onSuccess: () => {
+      utils.admin.allCards.invalidate();
+      toast.success("แก้ไขเคสสำเร็จ");
+      setEditCard(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteCardMutation = trpc.admin.deleteCard.useMutation({
+    onSuccess: () => {
+      utils.admin.allCards.invalidate();
+      toast.success("ลบเคสสำเร็จ");
+      setDeleteCardId(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const filteredCards = useMemo(() => {
     if (!allCardsQuery.data) return [];
@@ -227,9 +253,27 @@ function AdminCardsView() {
                     key={row.card.id}
                     className="rounded-lg border bg-card p-3 shadow-sm space-y-2"
                   >
-                    <p className="font-bold text-sm text-primary">
-                      {row.card.policyNumber}
-                    </p>
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="font-bold text-sm text-primary flex-1">
+                        {row.card.policyNumber}
+                      </p>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => setEditCard({ id: row.card.id, policyNumber: row.card.policyNumber, description: row.card.description, columnStatus: row.card.columnStatus })}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          title="แก้ไข"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteCardId(row.card.id)}
+                          className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600"
+                          title="ลบ"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
                     <p className="text-xs text-card-foreground whitespace-pre-wrap break-words">
                       {row.card.description}
                     </p>
@@ -254,6 +298,79 @@ function AdminCardsView() {
           );
         })}
       </div>
+
+      {/* Edit Card Dialog */}
+      <Dialog open={!!editCard} onOpenChange={(open) => { if (!open) setEditCard(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>แก้ไขเคส</DialogTitle>
+            <DialogDescription>แก้ไขข้อมูลเคสของตัวแทน</DialogDescription>
+          </DialogHeader>
+          {editCard && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>เลขกรมธรรม์</Label>
+                <Input
+                  value={editCard.policyNumber}
+                  onChange={(e) => setEditCard({ ...editCard, policyNumber: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>รายละเอียด</Label>
+                <Textarea
+                  value={editCard.description}
+                  onChange={(e) => setEditCard({ ...editCard, description: e.target.value })}
+                  rows={5}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>สถานะ</Label>
+                <Select value={editCard.columnStatus} onValueChange={(v) => setEditCard({ ...editCard, columnStatus: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="waiting_memo">⏰ รอ Memo</SelectItem>
+                    <SelectItem value="editing_memo">📝 กำลังแก้ Memo</SelectItem>
+                    <SelectItem value="memo_sent">📤 ส่ง Memo แล้ว</SelectItem>
+                    <SelectItem value="pending_review">⚠️ รอการพิจารณา</SelectItem>
+                    <SelectItem value="approved">✅ อนุมัติ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCard(null)}>ยกเลิก</Button>
+            <Button
+              onClick={() => editCard && updateCardMutation.mutate({ id: editCard.id, policyNumber: editCard.policyNumber, description: editCard.description, columnStatus: editCard.columnStatus as "waiting_memo" | "editing_memo" | "memo_sent" | "pending_review" | "approved" })}
+              disabled={updateCardMutation.isPending}
+            >
+              {updateCardMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              บันทึก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={deleteCardId !== null} onOpenChange={(open) => { if (!open) setDeleteCardId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ยืนยันการลบเคส</DialogTitle>
+            <DialogDescription>การลบไม่สามารถย้อนกลับได้ คุณแน่ใจหรือไม่?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteCardId(null)}>ยกเลิก</Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteCardId !== null && deleteCardMutation.mutate({ id: deleteCardId })}
+              disabled={deleteCardMutation.isPending}
+            >
+              {deleteCardMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              ลบเคส
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

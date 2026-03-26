@@ -94,3 +94,5 @@
 - [x] Goal Setting: เพิ่ม route และ sidebar navigation
 - [x] Goal Setting: เปลี่ยนชื่อ Prospects → "หาผู้มุ่งหวัง (Prospects)" และเพิ่มหน่วย คน/เคส หลังตัวเลขใน funnel cards
 - [x] Goal Setting: เพิ่มช่องกรอก "FYP ณ ปัจจุบัน" ใต้ Case เฉลี่ย — ปรับสูตรคำนวณจาก FYP ที่เหลือ (target - current)
+- [x] Admin Dashboard tab ติดตามเคส: admin แก้ไข kanban card ของทุก user ได้ (description, policyNumber, status)
+- [x] Admin Dashboard tab ติดตามเคส: admin ลบ kanban card ของทุก user ได้

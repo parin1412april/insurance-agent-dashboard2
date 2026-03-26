@@ -357,6 +357,39 @@ const adminRouter2 = router({ // Get all cards from all users (with user info)
       }
     }),
 
+  // Admin update any user's kanban card
+  updateCard: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        policyNumber: z.string().min(1).max(100).optional(),
+        description: z.string().min(1).optional(),
+        columnStatus: columnStatusEnum.optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const updateData: Record<string, unknown> = {};
+      if (input.policyNumber !== undefined) updateData.policyNumber = input.policyNumber;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.columnStatus !== undefined) updateData.columnStatus = input.columnStatus;
+      if (Object.keys(updateData).length > 0) {
+        await db.update(kanbanCards).set(updateData).where(eq(kanbanCards.id, input.id));
+      }
+      return { success: true };
+    }),
+
+  // Admin delete any user's kanban card
+  deleteCard: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(kanbanCards).where(eq(kanbanCards.id, input.id));
+      return { success: true };
+    }),
+
   // Whitelist email management
   whitelistEmails: router({
     list: adminProcedure.query(async () => {
